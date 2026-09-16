@@ -1,0 +1,21 @@
+---
+import DefaultFooter from '@astrojs/starlight/components/Footer.astro';
+---
+<DefaultFooter><slot /></DefaultFooter>
+<script>
+  // Horizontal code and reference tables must also be reachable without a mouse.
+  function focusableScrollRegions() {
+    document.querySelectorAll<HTMLElement>('.sl-markdown-content pre, .sl-markdown-content table').forEach((node) => {
+      if (node.scrollWidth > node.clientWidth + 1) {
+        node.tabIndex = 0;
+        node.setAttribute('aria-label', node.tagName === 'PRE' ? 'Scrollable code example' : 'Scrollable reference table');
+      } else {
+        node.removeAttribute('tabindex');
+        node.removeAttribute('aria-label');
+      }
+    });
+  }
+  focusableScrollRegions();
+  document.fonts.ready.then(focusableScrollRegions);
+  window.addEventListener('resize', focusableScrollRegions, { passive: true });
+</script>

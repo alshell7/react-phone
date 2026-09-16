@@ -1,0 +1,10 @@
+stateDiagram-v2
+  [*] --> Disconnected
+  Disconnected --> Connecting: connect
+  Connecting --> Registered: SIP registration succeeds
+  Connecting --> Error: timeout or rejection
+  Registered --> Reconnecting: WebSocket lost
+  Reconnecting --> Registered: registered again
+  Reconnecting --> Error: retry limit or timeout
+  Registered --> Disconnected: disconnect
+  Error --> Connecting: reconnect

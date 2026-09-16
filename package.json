@@ -1,0 +1,71 @@
+{
+  "name": "@azeer-ui-widget/react-phone",
+  "version": "0.1.0",
+  "description": "Composable, themeable React SIP phone with ElevenLabs UI audio visualization.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://alshell7.github.io/react-phone/",
+  "keywords": [
+    "react",
+    "typescript",
+    "sip",
+    "webrtc",
+    "softphone",
+    "webphone",
+    "elevenlabs",
+    "dynamic-island",
+    "embeddable",
+    "voip"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alshell7/react-phone.git"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core/index.ts"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "publish:check": "npx jsr publish --dry-run",
+    "check": "npm run typecheck && npm test && npm run build",
+    "docs:dev": "npm run dev --prefix docs",
+    "docs:build": "npm run build --prefix docs",
+    "docs:diagrams": "node scripts/render-diagrams.mjs",
+    "docs:screenshots": "node scripts/capture-screenshots.mjs",
+    "site:build": "npm run build && npm run docs:build && node scripts/assemble-site.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=18.3.0 <20",
+    "react-dom": ">=18.3.0 <20"
+  },
+  "dependencies": {
+    "jssip": "^3.13.8",
+    "lucide-react": "^1.46.0",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@fontsource-variable/geist": "^5.2.8",
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.186.0",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^6.0.0",
+    "prettier": "^3.9.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0",
+    "vitest": "^4.0.0",
+    "ws": "^8.21.3"
+  }
+}

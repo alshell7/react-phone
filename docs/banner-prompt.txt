@@ -1,0 +1,9 @@
+Use case: ads-marketing
+Asset type: wide GitHub repository banner, 3:1 landscape
+Primary request: a beautifully restrained developer-tool banner for Azeer React Phone, an embeddable SIP/WebRTC React phone.
+Scene/backdrop: near-black charcoal, subtle fine grid and ample negative space.
+Subject: on the right, an elegant luminous emerald audio orb with fine flowing waveform filaments and a small abstract phone-handset silhouette; polished dimensional rendering, not a fake application screenshot.
+Composition: clear typography on the left, contained artwork on right, generous outer margins, legible at GitHub README width.
+Text (verbatim): "Azeer React Phone" as the dominant title, "Your interface. Every conversation." as a smaller subtitle. Along bottom-left, small understated outlined technology tags reading "React", "TypeScript", "SIP", "WebRTC", "MIT".
+Color palette: charcoal and off-white with emerald highlights. Premium minimal Vercel-like developer aesthetic.
+Constraints: exactly these words, crisp readable type, no extra logos, no watermark, no cropped content, no excessive gradients or decorative clutter.

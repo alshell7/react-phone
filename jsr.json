@@ -1,0 +1,25 @@
+{
+  "name": "@azeer-ui-widget/react-phone",
+  "version": "0.1.0",
+  "license": "MIT",
+  "nodeModulesDir": "auto",
+  "lock": false,
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
+  "exports": { ".": "./src/index.ts", "./core": "./src/core/index.ts" },
+  "publish": {
+    "include": [
+      "src",
+      "README.md",
+      "CHANGELOG.md",
+      "VALIDATION.md",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md",
+      "package.json",
+      "jsr.json"
+    ]
+  }
+}

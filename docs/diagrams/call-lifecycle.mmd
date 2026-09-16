@@ -1,0 +1,16 @@
+stateDiagram-v2
+  [*] --> Idle
+  Idle --> Microphone: dial
+  Idle --> Incoming: INVITE
+  Incoming --> Microphone: answer
+  Microphone --> Ringing: outgoing INVITE
+  Microphone --> Active: incoming answer accepted
+  Ringing --> Active: answered
+  Active --> Held: hold
+  Held --> Active: resume
+  Active --> Ended: hangup or completed transfer
+  Held --> Ended: hangup
+  Incoming --> Ended: decline or caller cancelled
+  Microphone --> Ended: denied or cancelled
+  Ringing --> Ended: busy or no answer
+  Ended --> Idle: next interaction

@@ -231,7 +231,8 @@ test("panel resizing uses configured motion timing and reduced motion cancels it
 }) => {
   await page.goto(`${fixture}?auto`);
   await expect(
-    page.getByRole("button", { name: "End call", exact: true }),
+    // End call is also visible while dialing. Wait for connected utilities before resizing.
+    page.getByRole("button", { name: "Mute", exact: true }),
   ).toBeVisible();
   const animations = await page.evaluate(async () => {
     const paint = () =>

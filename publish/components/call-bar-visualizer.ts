@@ -1,7 +1,7 @@
 // Generated from src/components/call-bar-visualizer.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactElement } from "../react-types.d.ts";
 import { useCallActivity } from "../react/use-call-activity.ts";
 import { BarVisualizer, type BarVisualizerProps } from "./elevenlabs/bar-visualizer.ts";
 import { jsx as _jsx } from "react/jsx-runtime";

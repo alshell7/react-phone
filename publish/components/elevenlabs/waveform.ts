@@ -7,10 +7,11 @@
  * Changes: scoped styling, bounded values, static empty baseline, persistent resize
  * observer, and React/JSR explicit return types. See THIRD_PARTY_NOTICES.md.
  */
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef } from "react";
 
 /** Visual-only waveform. Media acquisition belongs to the phone, not this component. */
 import { jsx as _jsx } from "react/jsx-runtime";
+import type { ReactElement } from "../../react-types.d.ts";
 export interface WaveformProps {
   data?: readonly number[];
   barWidth?: number;

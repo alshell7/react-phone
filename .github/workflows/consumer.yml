@@ -1,0 +1,22 @@
+name: Published consumer
+on:
+  workflow_run:
+    workflows: [Publish]
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  consumer:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:consumer

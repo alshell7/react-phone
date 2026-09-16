@@ -1,7 +1,8 @@
 // Generated from src/react/use-animated-size.ts. Run npm run package:build; do not edit.
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { useEffect } from "react";
+import type { RefObject } from "../react-types.d.ts";
 import type { PhoneMotion } from "../components/motion.ts";
 import { useReducedMotion } from "./use-reduced-motion.ts";
 

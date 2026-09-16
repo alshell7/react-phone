@@ -3,7 +3,8 @@
 
 // Adapted from ElevenLabs UI Orb (MIT). Shader in orb-shader.ts.
 // Uses Three directly to keep React 18/19 support; no React renderer dependency.
-import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactElement } from "../../react-types.d.ts";
 import { useReducedMotion } from "../../react/use-reduced-motion.ts";
 import { fragmentShader, vertexShader } from "./orb-shader.ts";
 import { usePhoneTheme } from "../theme.ts";

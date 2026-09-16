@@ -1,7 +1,8 @@
 // Generated from src/react/use-draggable.ts. Run npm run package:build; do not edit.
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties, HTMLAttributes, RefObject } from "../react-types.d.ts";
 export interface PhonePosition {
   x: number;
   y: number;

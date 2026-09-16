@@ -1,7 +1,7 @@
 // Generated from src/components/call-waveform.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactElement } from "../react-types.d.ts";
 import { usePhone } from "../react/phone-provider.ts";
 import { LiveWaveform, type LiveWaveformProps } from "./elevenlabs/live-waveform.ts";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";

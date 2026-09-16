@@ -1,7 +1,8 @@
 // Generated from src/components/phone-widget.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactElement, ReactNode } from "../react-types.d.ts";
 import { AudioLines, GripHorizontal, Headphones, Settings2, X } from "lucide-react";
 import { PhoneProvider, usePhone, type PhoneProviderProps } from "../react/phone-provider.ts";
 import type { Caller } from "../core/types.ts";

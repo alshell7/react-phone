@@ -39,7 +39,7 @@ Screenshots use simulated calls. The hosted playground opens in **Preview** mode
 
 ## Install and embed
 
-Requires React 19. Use package version **0.1.1 or later** for npm-compatible installs.
+Requires React 19. Use package version **0.1.2 or later** for npm-compatible installs with strict TypeScript declarations.
 
 ```sh
 npx jsr add @azeer-ui-widget/react-phone

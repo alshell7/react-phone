@@ -1,6 +1,6 @@
 {
   "name": "@azeer-ui-widget/react-phone",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Composable, themeable React SIP phone with ElevenLabs UI audio visualization.",
   "type": "module",
   "license": "MIT",
@@ -33,6 +33,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:consumer": "node scripts/test-consumer.mjs",
     "publish:check": "npx jsr publish --dry-run",
     "check": "npm run package:check && npm run typecheck && npm test && npm run build",
     "package:build": "node scripts/build-package.mjs",

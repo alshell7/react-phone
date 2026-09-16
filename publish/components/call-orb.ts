@@ -1,7 +1,7 @@
 // Generated from src/components/call-orb.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactElement } from "../react-types.d.ts";
 import { Orb, type OrbProps } from "./elevenlabs/orb.ts";
 import { useCallActivity } from "../react/use-call-activity.ts";
 import { usePhoneMotion } from "./motion.ts";

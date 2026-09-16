@@ -1,7 +1,8 @@
 // Generated from src/components/phone-island.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactElement } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { CSSProperties, ReactElement } from "../react-types.d.ts";
 import { AudioLines, ChevronDown, ChevronUp, Phone, PhoneIncoming, PhoneOff } from "lucide-react";
 import { PhoneProvider, usePhone, type PhoneProviderProps } from "../react/phone-provider.ts";
 import { useAnimatedSize } from "../react/use-animated-size.ts";

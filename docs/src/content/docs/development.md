@@ -44,7 +44,9 @@ The package name and entry points are in `jsr.json`. Generated `publish/` source
 
 Edit the original TypeScript/TSX in `src/`, then run `npm run package:build` and commit the generated `publish/` tree. This lowers JSX to React runtime calls while retaining public TypeScript annotations and documentation. JSR's npm bridge can then emit ordinary JavaScript without leaving TSX files containing `npm:` imports. CI runs `npm run package:check` to reject stale generated files. The committed output also keeps the supplied Publish workflow build-free.
 
-The published package targets React 19. Before a release, validate a separate React app installed from JSR, including its production build and public API types; building this repository's playground alone does not test JSR's npm conversion.
+The published package targets React 19. A small generated declaration bridge also avoids JSR rewriting type imports into invalid `@types/react` imports. It aliases React's original types without runtime code.
+
+After publication, `npm run test:consumer` installs the exact release into a temporary, independent React app. It checks strict declarations with `skipLibCheck: false`, a Vite production build, and browser calls using both public entry points. The **Published consumer** workflow runs this automatically after **Publish** succeeds; `PHONE_PACKAGE_VERSION` can select an earlier published version when troubleshooting. Building this repository's playground alone does not test JSR's npm conversion.
 
 `nodeModulesDir: "auto"` lets the publisher resolve dependencies in a clean checkout without an `npm install` step. `lock: false` prevents the publisher from generating a second lockfile that would make the release checkout dirty; normal development uses the committed `package-lock.json`.
 

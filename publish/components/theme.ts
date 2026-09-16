@@ -1,7 +1,8 @@
 // Generated from src/components/theme.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import { createContext, useContext, type CSSProperties, type ReactElement, type ReactNode, type Ref } from "react";
+import { createContext, useContext } from "react";
+import type { CSSProperties, ReactElement, ReactNode, Ref } from "../react-types.d.ts";
 import { phoneStyles } from "./styles.ts";
 import { MotionContext, type PhoneMotion } from "./motion.ts";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";

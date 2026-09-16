@@ -3,7 +3,8 @@
 
 // Adapted from ElevenLabs UI BarVisualizer (MIT). See THIRD_PARTY_NOTICES.md.
 // Retains its connecting/listening sequences and volume-to-height bar rendering.
-import { useEffect, useMemo, useRef, useState, type HTMLAttributes, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { HTMLAttributes, ReactElement } from "../../react-types.d.ts";
 import { usePhoneMotion } from "../motion.ts";
 import { jsx as _jsx } from "react/jsx-runtime";
 import type { CallVisualState } from "../../core/visual-state.ts";

@@ -21,7 +21,7 @@ The new island suite passes on desktop and mobile: six container anchors, small-
 
 ## Documentation and release artifact
 
-Version 0.1.0's JSR npm conversion left TSX files with unsupported `npm:` imports; a fresh Vite consumer caught this after publication. Version 0.1.1 publishes JSX-free TypeScript and verifies that all 30 generated modules match the authored source. The package targets React 19. Post-publication checks of the actual installed npm artifact are recorded in the GitHub release notes.
+Version 0.1.0's JSR npm conversion left TSX files with unsupported `npm:` imports; a fresh Vite consumer caught this after publication. Version 0.1.1 fixed the build, but its React declarations failed `skipLibCheck: false`. Version 0.1.2 adds a declaration-only React namespace bridge. All 30 generated modules and the bridge are checked against their generation script. The package targets React 19. The **Published consumer** workflow now installs each release independently and tests strict declarations, production build, and browser calls. Post-publication results are recorded in the GitHub release notes.
 
 The combined Starlight/playground production build passes. All 13 documentation routes were checked for local asset/link targets. Desktop/mobile browser checks passed for search navigation, hosted-subpath playground calls, horizontal overflow, missing assets, and automated WCAG checks on the introduction, dynamic-island guide, and lifecycle guide. Narrow-screen code examples and reference tables are keyboard-scrollable. Screenshots are generated from Preview mode only. Root and documentation dependency audits report no known vulnerabilities at validation time.
 

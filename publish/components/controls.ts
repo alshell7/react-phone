@@ -1,7 +1,8 @@
 // Generated from src/components/controls.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import { useEffect, useId, useState, type ReactElement, type ReactNode } from "react";
+import { useEffect, useId, useState } from "react";
+import type { ReactElement, ReactNode } from "../react-types.d.ts";
 import { ArrowUpRight, AudioLines, Check, ChevronRight, Delete, Headphones, Mic, MicOff, Pause, Phone, PhoneIncoming, PhoneOff, Play, Volume2, X } from "lucide-react";
 import { usePhone } from "../react/phone-provider.ts";
 import { formatDuration } from "../core/validation.ts";

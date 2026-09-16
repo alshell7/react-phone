@@ -1,7 +1,8 @@
 // Generated from src/components/elevenlabs/live-waveform.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import { useEffect, useRef, type HTMLAttributes, type ReactElement } from "react";
+import { useEffect, useRef } from "react";
+import type { HTMLAttributes, ReactElement } from "../../react-types.d.ts";
 import { usePhoneMotion } from "../motion.ts";
 import { resumeOnInteraction } from "./audio-context.ts";
 

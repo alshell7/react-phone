@@ -1,7 +1,8 @@
 // Generated from src/react/phone-provider.tsx. Run npm run package:build; do not edit.
 "use client";
 
-import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactElement, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react";
+import type { ReactElement, ReactNode } from "../react-types.d.ts";
 import { PhoneClient } from "../core/phone-client.ts";
 import { jsx as _jsx } from "react/jsx-runtime";
 import type { PhoneToneOptions } from "../core/tones.ts";

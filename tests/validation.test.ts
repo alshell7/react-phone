@@ -7,8 +7,8 @@ import {
 
 const config = {
   websocketUrl: "wss://voice.example.com/ws",
-  uri: "sip:7002@voice.example.com",
-  authorizationUsername: "T6_7002",
+  uri: "sip:1001@voice.example.com",
+  authorizationUsername: "test_user",
   password: "test-only",
 };
 
@@ -28,10 +28,10 @@ describe("SIP input validation", () => {
       validateConfig({ ...config, websocketUrl: "ws://localhost/ws" }),
     ).not.toThrow());
   it.each([
-    "7002",
+    "1001",
     "sip:@voice.example.com",
-    "sip:7002@voice.example.com\r\nVia: injection",
-    "sip:7002@host?method=REGISTER",
+    "sip:1001@voice.example.com\r\nVia: injection",
+    "sip:1001@host?method=REGISTER",
   ])("rejects malformed SIP identity %s", (uri) =>
     expect(() => validateConfig({ ...config, uri })).toThrow(),
   );

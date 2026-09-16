@@ -18,22 +18,14 @@ npm run dev
 
 Open **http://127.0.0.1:5173**. The playground starts in **Preview** mode: simulated calls, no SIP traffic, no microphone capture. Try dialing an extension or **Simulate incoming call**, then switch layouts, colors, and caller details. **Get embed code** produces your current component configuration without account credentials.
 
-### Connect the supplied test account
+### Connect your SIP account
 
-1. Switch to **Live SIP** and open **Connection**.
-2. Enter your SIP username and password. The password is intentionally not included in this public repository.
-3. Review **Server & network settings**, then select **Connect account**.
-4. Dial a reachable extension, or call your registered extension from another phone to test receiving.
+1. Switch to **Live SIP** and open **Connection**. All account fields start empty.
+2. Enter your SIP username and password.
+3. Open **Server & network settings** and enter the SIP address and secure WebSocket URL supplied by your provider. Add STUN/TURN settings if your deployment requires them.
+4. Select **Connect account**, then dial a reachable destination or call your registered extension from another phone.
 
-| Demo field               | Initial value                     |
-| ------------------------ | --------------------------------- |
-| Authentication username  | `T6_7002_1`                       |
-| SIP address              | `sip:T6_7002_1@voice.mottasl.com` |
-| Display name / extension | `7002`                            |
-| WebSocket server         | `wss://voice.mottasl.com:8089/ws` |
-| Password                 | Enter at runtime                  |
-
-The **SIP address** is your address of record; **username** is your digest authentication identity. This VitalPBX account successfully registered on **2026-09-16** using the full tenant-prefixed device identity `T6_7002_1` in both fields. `7002` remains the user-facing extension. A second reachable endpoint is still needed to verify production call audio and routing. No TURN server is assumed; supply one if your deployment needs a media relay.
+The **SIP address** is your address of record; **username** is your digest authentication identity. Example-domain placeholders are guidance only and are never submitted as account values. No live account or server is bundled with the playground.
 
 Credentials remain in memory for the active connection; successful registration clears the form's password field. The app never writes credentials or call history to local/session storage. Disconnecting or unmounting clears the client's credentials and media. Reloading resets the session. Your browser's own password manager is controlled by you.
 

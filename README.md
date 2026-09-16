@@ -148,7 +148,7 @@ npm ci --prefix docs
 npm run docs:dev            # Starlight at http://localhost:4321/react-phone/
 ```
 
-For live testing, enter the SIP username and password in **Live SIP → Connection**. Credentials are held in memory and excluded from generated embed code. Do not put SIP passwords in public build-time environment variables. [Test-account configuration](https://alshell7.github.io/react-phone/playground-guide/#connect-the-supplied-test-account) documents the verified tenant-prefixed VitalPBX identity without including its password.
+For live testing, enter the SIP username and password in **Live SIP → Connection**. Credentials are held in memory and excluded from generated embed code. Do not put SIP passwords in public build-time environment variables. [Connection setup](https://alshell7.github.io/react-phone/playground-guide/#connect-your-sip-account) explains how to supply your own account; all Live SIP fields start empty.
 
 ```sh
 npm run package:build       # Refresh publish/ after changing src/

@@ -22,7 +22,7 @@ export function CustomPhone() {
         <ConnectionForm
           defaultValues={{
             websocketUrl: "wss://pbx.example.com/ws",
-            uri: "sip:7002@pbx.example.com",
+            uri: "sip:1001@pbx.example.com",
           }}
         />
         <CallerCard />

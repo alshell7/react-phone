@@ -635,7 +635,7 @@ export function ConnectionForm({
             id={`${id}-uri`}
             value={uri}
             onChange={(event) => setUri(event.target.value)}
-            placeholder="sip:7002@pbx.example.com"
+            placeholder="sip:1001@pbx.example.com"
             required
             disabled={pending}
           />

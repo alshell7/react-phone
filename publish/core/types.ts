@@ -4,7 +4,7 @@ import type { PhoneToneOptions } from "./tones.ts";
 export interface SipConfig {
   /** Secure WebSocket endpoint, for example wss://pbx.example.com/ws. */
   websocketUrl: string;
-  /** Address of record, for example sip:7002@pbx.example.com. */
+  /** Address of record, for example sip:1001@pbx.example.com. */
   uri: string;
   /** Digest authentication identity; may differ from the URI user. */
   authorizationUsername?: string;

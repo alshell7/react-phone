@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 — 2026-09-17
+
+- Remove bundled live SIP account/server details and account-specific documentation. Live connection fields and outgoing prefill start empty.
+- Use generic example addresses and verify empty connection fields on desktop and mobile.
+
 ## 0.1.2 — 2026-09-16
 
 - Fix React declarations for strict TypeScript consumers (`skipLibCheck: false`) using a declaration-only namespace bridge. Public prop types and runtime behavior are unchanged.

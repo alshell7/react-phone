@@ -24,7 +24,7 @@ export function validateConfig(config: SipConfig): void {
       "WebSocket credentials must be supplied in the account fields.",
     );
   if (!/^sips?:[^\s@<>;?]+@[^\s@<>/?]+$/.test(config.uri))
-    throw new Error("Enter a SIP address such as sip:7002@pbx.example.com.");
+    throw new Error("Enter a SIP address such as sip:1001@pbx.example.com.");
   if (!config.password) throw new Error("Enter your SIP password.");
   if (
     config.authorizationUsername &&

@@ -13,7 +13,7 @@ export function validateConfig(config: SipConfig): void {
     throw new Error("Use wss:// for your SIP server (ws:// is only allowed on localhost).");
   }
   if (url.username || url.password || !url.hostname) throw new Error("WebSocket credentials must be supplied in the account fields.");
-  if (!/^sips?:[^\s@<>;?]+@[^\s@<>/?]+$/.test(config.uri)) throw new Error("Enter a SIP address such as sip:7002@pbx.example.com.");
+  if (!/^sips?:[^\s@<>;?]+@[^\s@<>/?]+$/.test(config.uri)) throw new Error("Enter a SIP address such as sip:1001@pbx.example.com.");
   if (!config.password) throw new Error("Enter your SIP password.");
   if (config.authorizationUsername && /[\r\n]/.test(config.authorizationUsername)) throw new Error("Enter a valid authentication username.");
   for (const value of [config.registrationTimeoutMs, config.callTimeoutSeconds, config.maxReconnectAttempts]) {

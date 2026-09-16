@@ -58,7 +58,7 @@ vi.mock("jssip", () => ({
 }));
 const config = {
   websocketUrl: "wss://voice.example.com/ws",
-  uri: "sip:7002@voice.example.com",
+  uri: "sip:1001@voice.example.com",
   authorizationUsername: "auth-user",
   password: "test-only",
   registrationTimeoutMs: 20000,

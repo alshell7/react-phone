@@ -72,12 +72,6 @@ const swatches = [
   { name: "Plum", color: "#755075" },
 ];
 const previewOptions = { enabled: true as const };
-const accountDefaults = {
-  authorizationUsername: "T6_7002_1",
-  uri: "sip:T6_7002_1@voice.mottasl.com",
-  websocketUrl: "wss://voice.mottasl.com:8089/ws",
-  displayName: "7002",
-};
 
 function Brand({ small = false }: { small?: boolean }): ReactElement {
   return (
@@ -202,7 +196,7 @@ function Playground({
   const [outgoingMode, setOutgoingMode] = useState<
     "manual" | "prefill" | "auto"
   >("manual");
-  const [prefillNumber, setPrefillNumber] = useState("7003");
+  const [prefillNumber, setPrefillNumber] = useState("");
   const [outgoingRequest, setOutgoingRequest] = useState<{
     number: string;
     auto: boolean;
@@ -1610,7 +1604,7 @@ function Playground({
                             </button>
                           </div>
                         ) : (
-                          <ConnectionForm defaultValues={accountDefaults} />
+                          <ConnectionForm />
                         )}
                       </PhoneRoot>
                     )}

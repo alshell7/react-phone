@@ -83,7 +83,7 @@ test("presets, theme, caller details and safe embed snippet", async ({
     'preset="basic"',
   );
   await expect(page.locator(".code-dialog pre")).toContainText("Support team");
-  await expect(page.locator(".code-dialog pre")).not.toContainText("T6_7002");
+  await expect(page.locator(".code-dialog pre")).not.toContainText("test_user");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Live SIP", exact: true }).click();
@@ -104,7 +104,9 @@ test("live mode asks for credentials without auto-dialing or storing a password"
   await page.getByRole("button", { name: "Live SIP", exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "Username", exact: true }),
-  ).toHaveValue("T6_7002_1");
+  ).toHaveValue("");
+  await expect(page.getByRole("textbox", { name: "SIP address", exact: true })).toHaveValue("");
+  await expect(page.getByRole("textbox", { name: "WebSocket server", exact: true })).toHaveValue("");
   await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
   await expect(
     page.getByRole("button", { name: "Connect account", exact: true }),

@@ -38,10 +38,8 @@ The combined Starlight/playground production build passes. All 13 documentation 
 
 Tone synthesis is tested through Web Audio scheduling; physical speakers and vibration hardware were not measured. Local tone output uses the default browser device. The supplied Publish workflow remains unchanged. The new public exports pass JSR's type/publish dry run.
 
-## Supplied endpoint
+## Live deployment
 
-The replacement account **successfully registered** at `wss://voice.mottasl.com:8089/ws` with SIP address `sip:T6_7002_1@voice.mottasl.com` and digest authentication username `T6_7002_1`. The browser client disconnected after the check. The short username `7002_1` was not needed or separately validated. Demo defaults now use the successful full identity; extension/display name remains `7002`.
+Production two-party calling, media routing/TURN, and REFER interoperability must be verified with your own account and endpoints. The automated two-browser test uses actual SIP/WebRTC against a local test registrar.
 
-No second production callee was supplied, so a production call through VitalPBX, media routing/TURN, and REFER interoperability remain unverified. The two-browser automated test uses actual SIP/WebRTC against the local test registrar, not the production PBX.
-
-No password is stored in the source, demo bundle, documentation, screenshots, or published file allowlist. The release workflows publish the JSR source package and the GitHub Pages documentation/playground from `main`.
+Live SIP fields start empty. No live account, server, or password is bundled in the current source, playground, or documentation.

@@ -1,6 +1,6 @@
 {
   "name": "@azeer-ui-widget/react-phone",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Composable, themeable React SIP phone with ElevenLabs UI audio visualization.",
   "type": "module",
   "license": "MIT",
@@ -34,7 +34,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "publish:check": "npx jsr publish --dry-run",
-    "check": "npm run typecheck && npm test && npm run build",
+    "check": "npm run package:check && npm run typecheck && npm test && npm run build",
+    "package:build": "node scripts/build-package.mjs",
+    "package:check": "node scripts/build-package.mjs --check",
     "docs:dev": "npm run dev --prefix docs",
     "docs:build": "npm run build --prefix docs",
     "docs:diagrams": "node scripts/render-diagrams.mjs",
@@ -42,8 +44,8 @@
     "site:build": "npm run build && npm run docs:build && node scripts/assemble-site.mjs"
   },
   "peerDependencies": {
-    "react": ">=18.3.0 <20",
-    "react-dom": ">=18.3.0 <20"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "dependencies": {
     "jssip": "^3.13.8",
@@ -52,6 +54,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@babel/core": "^8.0.5",
+    "@babel/plugin-transform-react-jsx": "^8.0.1",
     "@fontsource-variable/geist": "^5.2.8",
     "@playwright/test": "^1.58.0",
     "@types/node": "^24.0.0",
@@ -61,8 +65,8 @@
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^6.0.0",
     "prettier": "^3.9.6",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.9.3",
     "vite": "^8.3.0",
     "vitest": "^4.0.0",

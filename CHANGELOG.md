@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 — 2026-09-16
+
+- Fix JSR npm compatibility by publishing JSX-free TypeScript generated from the original TSX sources. Ordinary React/Vite projects need no custom `npm:` resolver.
+- Preserve public types and JSDoc in the generated modules; verify they match `src/` before release.
+- Declare React 19 support consistently. React and its types use compatible `^19.0.0` ranges so npm can share the host's React runtime.
+
+Use 0.1.1 or later for npm-compatible installations. Version 0.1.0's TSX output from JSR's npm bridge is not compatible with a standard Vite setup.
+
 ## 0.1.0 — 2026-09-16
 
 First public release of `@azeer-ui-widget/react-phone`.

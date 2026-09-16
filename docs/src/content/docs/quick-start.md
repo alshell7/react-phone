@@ -3,7 +3,7 @@ title: "Quick start"
 description: "Quick start for Azeer React Phone. Configuration, examples, and expected behavior."
 ---
 
-Install the package in your React 18.3 or React 19 app:
+Install version **0.1.1 or later** in your React 19 app:
 
 ```sh
 npx jsr add @azeer-ui-widget/react-phone

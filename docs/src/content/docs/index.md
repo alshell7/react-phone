@@ -51,7 +51,7 @@ Supply a stable configuration after sign-in. The phone asks for microphone acces
 
 | Calling                           | Presentation                           | Integration                  |
 | --------------------------------- | -------------------------------------- | ---------------------------- |
-| Incoming / outgoing audio         | Basic, advanced, compact presets       | React 18.3 / 19 + TypeScript |
+| Incoming / outgoing audio         | Basic, advanced, compact presets       | React 19 + TypeScript |
 | Mute, hold, DTMF, blind transfer  | Orb, live waveform, frequency bars     | Typed lifecycle callbacks    |
 | Device selection, audio recovery  | Themes, identity, tags, render slots   | Source package on JSR        |
 | Permission and reconnect handling | Island placement and incoming behavior | MIT license                  |

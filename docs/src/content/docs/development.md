@@ -4,6 +4,8 @@ description: "Development & releases for Azeer React Phone. Configuration, examp
 ---
 
 ```sh
+npm run package:build
+npm run package:check
 npm run typecheck
 npm test
 npm run build
@@ -20,6 +22,7 @@ Unit tests cover configuration, authentication failure, timeouts, call/permissio
 | `src/react/`                 | Provider and external-store hook                             |
 | `src/components/`            | Presets, composable controls, scoped themes                  |
 | `src/components/elevenlabs/` | Attributed ElevenLabs UI Orb/shader and waveform adaptations |
+| `publish/`                   | Generated JSX-free TypeScript for JSR; do not edit directly   |
 | `demo/`                      | React playground; excluded from the published source package |
 | `tests/`                     | Lifecycle unit tests and desktop/mobile browser tests        |
 
@@ -37,7 +40,11 @@ Starlight serves `/react-phone/`; the React playground is copied to `/react-phon
 
 ## Publish to JSR
 
-The package name and entry points are in `jsr.json`. Sources, README, and license notices are explicitly allowlisted; the demo, credentials, test results, and development files are excluded.
+The package name and entry points are in `jsr.json`. Generated `publish/` sources, README, and license notices are explicitly allowlisted; the demo, credentials, test results, and development files are excluded.
+
+Edit the original TypeScript/TSX in `src/`, then run `npm run package:build` and commit the generated `publish/` tree. This lowers JSX to React runtime calls while retaining public TypeScript annotations and documentation. JSR's npm bridge can then emit ordinary JavaScript without leaving TSX files containing `npm:` imports. CI runs `npm run package:check` to reject stale generated files. The committed output also keeps the supplied Publish workflow build-free.
+
+The published package targets React 19. Before a release, validate a separate React app installed from JSR, including its production build and public API types; building this repository's playground alone does not test JSR's npm conversion.
 
 `nodeModulesDir: "auto"` lets the publisher resolve dependencies in a clean checkout without an `npm install` step. `lock: false` prevents the publisher from generating a second lockfile that would make the release checkout dirty; normal development uses the committed `package-lock.json`.
 

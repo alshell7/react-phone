@@ -42,7 +42,8 @@
     "docs:build": "npm run build --prefix docs",
     "docs:diagrams": "node scripts/render-diagrams.mjs",
     "docs:screenshots": "node scripts/capture-screenshots.mjs",
-    "site:build": "npm run build && npm run docs:build && node scripts/assemble-site.mjs"
+    "site:build": "npm run build && npm run docs:build && npm run native:playground && node scripts/assemble-site.mjs",
+    "native:playground": "EXPO_BASE_URL=/react-phone/native/playground npm run playground:build --prefix native"
   },
   "peerDependencies": {
     "react": "^19.0.0",

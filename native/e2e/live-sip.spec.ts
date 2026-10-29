@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  * Set SIP_TEST_TARGET to a destination that answers (echo test or voicemail).
  */
 const env: Record<string, string> = { ...process.env } as Record<string, string>;
-const file = resolve(__dirname, "../.env.local");
+const file = fileURLToPath(new URL("../.env.local", import.meta.url));
 if (existsSync(file))
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const match = /^\s*([A-Z0-9_]+)=(.*)$/.exec(line);

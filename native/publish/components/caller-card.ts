@@ -6,6 +6,7 @@ import { AudioLines } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.ts";
 import type { Caller } from "../core/types.ts";
 import { usePhoneTheme } from "./theme.ts";
+import { endReasonLabel, usePhoneLabels, usePhoneNumberFormatter } from "./locale.ts";
 import { PhoneText, PulseRings, StatusDot } from "./primitives.ts";
 import { CallTimer } from "./status.ts";
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
@@ -94,20 +95,22 @@ export function CallerCard({
     state
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
+  const format = usePhoneNumberFormatter();
   const caller = supplied ?? state.call?.caller;
   const large = size === "large";
   const busy = !["idle", "ended"].includes(state.status);
   const ringing = state.status === "incoming" || state.status === "ringing";
   const status = {
-    idle: "Ready to connect",
-    "requesting-microphone": "Waiting for microphone…",
-    dialing: "Calling…",
-    ringing: "Ringing…",
-    incoming: "Incoming call",
-    answering: "Connecting…",
-    active: state.remoteHeld ? "Caller put you on hold" : "Connected",
-    held: "On hold",
-    ended: state.call?.endReason ?? "Call ended"
+    idle: labels.readyToConnect,
+    "requesting-microphone": labels.waitingForMicrophone,
+    dialing: labels.calling,
+    ringing: labels.ringing,
+    incoming: labels.incomingCall,
+    answering: labels.answering,
+    active: state.remoteHeld ? labels.remoteHold : labels.connected,
+    held: labels.onHold,
+    ended: endReasonLabel(labels, state.call?.endReason)
   }[state.status];
   const avatarSize = large ? 112 : 88;
   const text = color ?? theme.foreground;
@@ -150,7 +153,7 @@ export function CallerCard({
           textAlign: "center",
           letterSpacing: large ? -0.4 : -0.2
         },
-        children: caller?.name || caller?.number || "Ready when you are"
+        children: caller?.name || (caller?.number ? format(caller.number) : labels.idleTitle)
       }), /*#__PURE__*/_jsx(PhoneText, {
         size: large ? 17 : 15,
         color: subtle,
@@ -159,7 +162,7 @@ export function CallerCard({
           textAlign: "center",
           opacity: color ? 0.75 : 1
         },
-        children: caller?.name ? caller.number : busy ? " " : "Dial a number. Make a connection."
+        children: caller?.name ? format(caller.number) : busy ? " " : labels.idleSubtitle
       })]
     }), caller && (renderTags ? renderTags(caller) : caller.tags?.length ? /*#__PURE__*/_jsx(View, {
       style: {

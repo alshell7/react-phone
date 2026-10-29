@@ -18,7 +18,9 @@ const types = {
 };
 
 createServer(async (request, response) => {
-  const path = normalize(decodeURIComponent(new URL(request.url ?? "/", "http://x").pathname)).replace(/^(\.\.[/\\])+/, "");
+  const path = normalize(
+    decodeURIComponent(new URL(request.url ?? "/", "http://x").pathname),
+  ).replace(/^(\.\.[/\\])+/, "");
   let file = join(root, path);
   try {
     if ((await stat(file)).isDirectory()) file = join(file, "index.html");
@@ -27,9 +29,13 @@ createServer(async (request, response) => {
   }
   try {
     const body = await readFile(file);
-    response.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream" });
+    response.writeHead(200, {
+      "content-type": types[extname(file)] ?? "application/octet-stream",
+    });
     response.end(body);
   } catch {
     response.writeHead(404).end("Not found");
   }
-}).listen(port, "127.0.0.1", () => console.log(`Playground on http://127.0.0.1:${port}`));
+}).listen(port, "127.0.0.1", () =>
+  console.log(`Playground on http://127.0.0.1:${port}`),
+);

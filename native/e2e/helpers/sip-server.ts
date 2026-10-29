@@ -11,10 +11,15 @@ export async function startTestSipServer(): Promise<{
   methods: string[];
   close: () => Promise<void>;
 }> {
-  const server = new WebSocketServer({ host: "127.0.0.1", port: 0, handleProtocols: () => "sip" });
+  const server = new WebSocketServer({
+    host: "127.0.0.1",
+    port: 0,
+    handleProtocols: () => "sip",
+  });
   await new Promise<void>((resolve) => server.on("listening", resolve));
   const address = server.address();
-  if (!address || typeof address === "string") throw new Error("Missing socket address");
+  if (!address || typeof address === "string")
+    throw new Error("Missing socket address");
   const registrations = new Map<string, WebSocket>();
   const dialogs = new Map<string, [WebSocket, WebSocket]>();
   const methods: string[] = [];
@@ -31,7 +36,8 @@ export async function startTestSipServer(): Promise<{
       for (const line of lines.slice(1)) {
         if (!line) break;
         const at = line.indexOf(":");
-        if (at > 0) headers[line.slice(0, at).toLowerCase()] = line.slice(at + 1).trim();
+        if (at > 0)
+          headers[line.slice(0, at).toLowerCase()] = line.slice(at + 1).trim();
       }
       const reply = (status: string, extra: string[] = []) => {
         socket.send(
@@ -59,11 +65,16 @@ export async function startTestSipServer(): Promise<{
           return;
         }
         const auth = Object.fromEntries(
-          Array.from(headers.authorization.matchAll(/(\w+)=(?:"([^"]*)"|([^,\s]+))/g), (m) => [m[1], m[2] ?? m[3]]),
+          Array.from(
+            headers.authorization.matchAll(/(\w+)=(?:"([^"]*)"|([^,\s]+))/g),
+            (m) => [m[1], m[2] ?? m[3]],
+          ),
         );
         const ha1 = md5(`${auth.username}:test-pbx:fixture-password`);
         const ha2 = md5(`REGISTER:${auth.uri}`);
-        const expected = md5(`${ha1}:test-nonce:${auth.nc}:${auth.cnonce}:${auth.qop}:${ha2}`);
+        const expected = md5(
+          `${ha1}:test-nonce:${auth.nc}:${auth.cnonce}:${auth.qop}:${ha2}`,
+        );
         if (auth.response !== expected) {
           reply("403 Forbidden");
           return;
@@ -89,7 +100,8 @@ export async function startTestSipServer(): Promise<{
       if (dialog) {
         const target = dialog[0] === socket ? dialog[1] : dialog[0];
         if (target.readyState === 1) target.send(text);
-      } else if (method !== "SIP/2.0" && method !== "ACK") reply("481 Call/Transaction Does Not Exist");
+      } else if (method !== "SIP/2.0" && method !== "ACK")
+        reply("481 Call/Transaction Does Not Exist");
     });
   });
   return {
@@ -97,7 +109,9 @@ export async function startTestSipServer(): Promise<{
     methods,
     close: async () => {
       for (const socket of server.clients) socket.terminate();
-      await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
     },
   };
 }

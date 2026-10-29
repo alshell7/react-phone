@@ -13,6 +13,7 @@ First release of `@azeer-ui-widget/react-native-phone`, the React Native compani
 - Foreground re-registration, bounded reconnection, ICE loss handling, and generation-guarded media cleanup.
 - Audio levels from WebRTC statistics, identical on every platform.
 - Readable end reasons ("Call ended", "Missed call", "Number not found", …) instead of raw SIP causes.
+- Hold and resume retry until renegotiation settles instead of failing a quick tap.
 
 ### Interface
 
@@ -21,6 +22,11 @@ First release of `@azeer-ui-widget/react-native-phone`, the React Native compani
 - iOS-style keypad (touch-down entry, long-press 0 for +, long-press delete to clear), slide-to-answer, Recents from real call history.
 - Native Orb, Live Waveform, Bar Visualizer, and Waveform built with react-native-svg and the native animation driver.
 - Light, dark, and system appearance; scoped theme tokens; caller identity, tags, and render slots; haptics; reduced motion; VoiceOver/TalkBack labels and web ARIA state.
+- Smart-dial contact suggestions while typing (numbers and names by keypad letters, initials, highlighted matches) from `contacts`, an async `searchContacts`, and Recents; long-press speed dial for keys 1–9.
+- Six theme presets with light and dark palettes; `answer`, keypad, and island colour tokens; circle or rounded controls.
+- Full localization through `labels` (every visible string and accessibility label, including end reasons) and display-only `formatNumber`.
+- Custom in-call buttons (`extraControls`) positioned through `controls`; optional captions, keypad letters, and grid columns.
+- Keypad and orb size to the height the phone actually has, so End call and the keypad always fit.
 
 ### Integration
 

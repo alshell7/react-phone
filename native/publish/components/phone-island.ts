@@ -5,7 +5,8 @@ import { AccessibilityInfo, Animated, BackHandler, Easing, PanResponder, Pressab
 import { AudioLines, ChevronDown, ChevronUp, CircleAlert, Phone, PhoneIncoming, PhoneOff } from "lucide-react-native";
 import { PhoneProvider, usePhone, type PhoneProviderProps } from "../react/phone-provider.ts";
 import { useCallActivity } from "../react/use-call-activity.ts";
-import { PhoneRoot, mixColors, usePhoneTheme, withAlpha } from "./theme.ts";
+import { PhoneRoot, controlRadius, mixColors, readableColor, usePhoneTheme, withAlpha } from "./theme.ts";
+import { usePhoneLabels, usePhoneNumberFormatter } from "./locale.ts";
 import { animateNextLayout, usePhoneMotion } from "./motion.ts";
 import { PhoneText, PressableScale, PulseRings, accessibilityStateProps } from "./primitives.ts";
 import { CallTimer, action } from "./status.ts";
@@ -81,6 +82,8 @@ function IslandBars({
 export function PhoneIsland({
   theme,
   motion,
+  labels,
+  formatNumber,
   style,
   testID,
   ...props
@@ -88,6 +91,8 @@ export function PhoneIsland({
   return /*#__PURE__*/_jsx(PhoneRoot, {
     theme: theme,
     motion: motion,
+    labels: labels,
+    formatNumber: formatNumber,
     testID: testID,
     style: [{
       position: "absolute",
@@ -100,7 +105,9 @@ export function PhoneIsland({
     children: /*#__PURE__*/_jsx(IslandBody, {
       ...props,
       theme: theme,
-      motion: motion
+      motion: motion,
+      labels: labels,
+      formatNumber: formatNumber
     })
   });
 }
@@ -120,16 +127,19 @@ function IslandBody({
   backdrop = true,
   tone = "contrast",
   expandedWidth = 420,
-  title = "Your phone",
+  title,
   theme: themeTokens,
   motion: motionSetting,
   ...widget
 }: Omit<PhoneIslandProps, "style" | "testID">): ReactElement {
   const {
     state,
-    client
+    client,
+    preview
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
+  const format = usePhoneNumberFormatter();
   const motion = usePhoneMotion();
   const window = useWindowDimensions();
   // Dock within the measured overlay so container scope never sizes from the window.
@@ -176,8 +186,8 @@ function IslandBody({
     clearTimeout(timer.current);
     if (state.status === "incoming") {
       if (announceIncoming) {
-        const who = state.call?.caller.name ?? state.call?.caller.number ?? "unknown caller";
-        AccessibilityInfo.announceForAccessibility?.(`Incoming call from ${who}`);
+        const who = state.call?.caller.name ?? state.call?.caller.number ?? labels.unknownCaller;
+        AccessibilityInfo.announceForAccessibility?.(labels.incomingCallFrom(who));
       }
       if (incomingBehavior === "expand") latestChange.current(true, "incoming");
     } else if (state.call?.direction === "outgoing" && id !== before.id && !["idle", "ended"].includes(state.status) && expandOnOutgoing) {
@@ -243,15 +253,17 @@ function IslandBody({
   const busy = !["idle", "ended"].includes(state.status);
   const rawCaller = state.call?.caller;
   const caller = rawCaller && widget.resolveCaller ? widget.resolveCaller(rawCaller) : rawCaller;
-  const label = incoming ? "Incoming call" : state.status === "held" || state.remoteHeld ? "On hold" : state.status === "active" ? "In conversation" : state.status === "answering" ? "Connecting call" : busy ? "Calling" : state.error ? "Phone needs attention" : state.playbackBlocked ? "Enable call audio" : title;
+  const heading = title ?? labels.title;
+  const label = incoming ? labels.incomingCall : state.status === "held" || state.remoteHeld ? labels.onHold : state.status === "active" ? labels.inConversation : state.status === "answering" ? labels.connectingCall : busy ? labels.callingShort : state.error ? labels.needsAttention : state.playbackBlocked ? labels.enableCallAudio : heading;
   const connectionLabel = {
-    disconnected: "Not connected",
-    connecting: "Connecting…",
-    registered: "Ready for calls",
-    reconnecting: "Reconnecting…",
-    error: "Connection failed"
+    disconnected: labels.notConnected,
+    connecting: labels.connecting,
+    registered: preview ? labels.previewMode : labels.readyForCalls,
+    reconnecting: labels.reconnecting,
+    error: labels.connectionFailed
   }[state.connection];
-  const secondary = incoming ? caller?.name ? caller.number : "Tap to answer" : busy ? [caller?.name ?? caller?.number, state.muted ? "Muted" : null].filter(Boolean).join(" · ") : connectionLabel;
+  const who = caller?.name ?? (caller?.number ? format(caller.number) : undefined);
+  const secondary = incoming ? caller?.name ? format(caller.number) : labels.tapToAnswer : busy ? [who, state.muted ? labels.muted : null].filter(Boolean).join(" · ") : connectionLabel;
   const inset = (value: number | undefined) => Number.isFinite(value) ? Math.max(0, Math.min(500, value!)) : 12;
   const ox = inset(typeof offset === "number" ? offset : offset.x);
   const oy = inset(typeof offset === "number" ? offset : offset.y);
@@ -260,11 +272,14 @@ function IslandBody({
   const available = area.width - ox * 2 - (safe.left ?? 0) - (safe.right ?? 0);
   const width = Math.max(200, Math.min(available, expanded ? expandedWidth : notify ? 380 : busy ? 300 : 250));
   const contrast = tone === "contrast";
-  const pillBg = contrast ? theme.appearance === "dark" ? "#000000" : "#101412" : theme.background;
-  const pillFg = contrast ? "#f4f7f2" : theme.foreground;
-  const pillMuted = contrast ? "rgba(244,247,242,0.62)" : theme.muted;
+  const pillBg = contrast ? theme.islandBackground : theme.background;
+  const pillFg = contrast ? theme.islandForeground : theme.foreground;
+  const pillMuted = contrast ? withAlpha(theme.islandForeground, 0.62) : theme.muted;
   // A dark accent disappears on the dark capsule; lift it toward white for contrast.
-  const glow = contrast && theme.appearance === "light" ? mixColors(theme.accent, "#ffffff", 0.38) : theme.accent;
+  const glow = contrast && readableColor(theme.islandBackground) === "#ffffff" && readableColor(theme.accent) === "#ffffff" ? mixColors(theme.accent, "#ffffff", 0.38) : theme.accent;
+  const onGlow = readableColor(glow);
+  // A custom answer colour wins; otherwise the lifted accent reads on the capsule.
+  const answerColor = contrast && theme.answer === theme.accent ? glow : theme.answer;
   const maxPanel = area.height - oy * 2 - (safe.top ?? 0) - (safe.bottom ?? 0) - 64;
   const align = placement.endsWith("left") ? "flex-start" : placement.endsWith("right") ? "flex-end" : "center";
   const mark = /*#__PURE__*/_jsxs(View, {
@@ -294,11 +309,11 @@ function IslandBody({
         color: theme.dangerForeground
       }) : incoming ? /*#__PURE__*/_jsx(PhoneIncoming, {
         size: 16,
-        color: contrast ? "#0d1510" : theme.accentForeground
+        color: onGlow
       }) : busy ? /*#__PURE__*/_jsx(Phone, {
         size: 15,
-        color: contrast ? "#0d1510" : theme.accentForeground,
-        fill: contrast ? "#0d1510" : theme.accentForeground
+        color: onGlow,
+        fill: onGlow
       }) : /*#__PURE__*/_jsx(AudioLines, {
         size: 17,
         color: pillFg
@@ -310,7 +325,7 @@ function IslandBody({
     children: /*#__PURE__*/_jsxs(Pressable, {
       onPress: () => change(!expanded, "user"),
       accessibilityRole: "button",
-      accessibilityLabel: expanded ? "Collapse phone" : busy ? "Open call" : "Open phone",
+      accessibilityLabel: expanded ? labels.collapsePhone : busy ? labels.openCall : labels.openPhone,
       accessibilityHint: expanded ? undefined : `${label}. ${secondary}`,
       ...accessibilityStateProps("button", {
         expanded
@@ -391,15 +406,15 @@ function IslandBody({
       style: {
         flex: 1
       },
-      children: caller?.name ?? caller?.number ?? "Unknown caller"
+      children: who ?? labels.unknownCaller
     }), /*#__PURE__*/_jsx(PressableScale, {
       onPress: () => client.hangup(),
-      accessibilityLabel: "Decline",
+      accessibilityLabel: labels.decline,
       scaleTo: 0.88,
       style: {
         width: 46,
         height: 46,
-        borderRadius: 23,
+        borderRadius: controlRadius(theme, 46),
         backgroundColor: theme.danger,
         alignItems: "center",
         justifyContent: "center"
@@ -413,20 +428,20 @@ function IslandBody({
         change(true, "user");
         action(() => client.answer());
       },
-      accessibilityLabel: "Answer",
+      accessibilityLabel: labels.answer,
       scaleTo: 0.88,
       style: {
         width: 46,
         height: 46,
-        borderRadius: 23,
-        backgroundColor: glow,
+        borderRadius: controlRadius(theme, 46),
+        backgroundColor: answerColor,
         alignItems: "center",
         justifyContent: "center"
       },
       children: /*#__PURE__*/_jsx(Phone, {
         size: 20,
-        color: "#0d1510",
-        fill: "#0d1510"
+        color: readableColor(answerColor),
+        fill: readableColor(answerColor)
       })
     })]
   }) : null;
@@ -520,7 +535,7 @@ function IslandBody({
             showsVerticalScrollIndicator: false,
             children: /*#__PURE__*/_jsx(PhoneWidget, {
               ...widget,
-              title: title,
+              title: heading,
               theme: themeTokens,
               motion: motionSetting,
               variant: "sheet",

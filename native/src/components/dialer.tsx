@@ -1,11 +1,29 @@
-import { useEffect, useState, type ReactElement } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { Platform, TextInput, View } from "react-native";
 import { Delete, Phone } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.tsx";
 import type { Caller } from "../core/types.ts";
-import { usePhoneTheme } from "./theme.tsx";
-import { Button, IconButton, PhoneText, PressableScale } from "./primitives.tsx";
+import { dialQuery } from "../core/contacts.ts";
+import { controlRadius, usePhoneTheme } from "./theme.tsx";
+import { usePhoneLabels, usePhoneNumberFormatter } from "./locale.tsx";
+import {
+  Button,
+  IconButton,
+  PhoneText,
+  PressableScale,
+} from "./primitives.tsx";
 import { action } from "./status.tsx";
+import {
+  ContactSuggestions,
+  useContactSuggestions,
+  type ContactSuggestionOptions,
+} from "./contact-suggestions.tsx";
 
 const KEYS: ReadonlyArray<readonly [string, string]> = [
   ["1", ""],
@@ -22,18 +40,34 @@ const KEYS: ReadonlyArray<readonly [string, string]> = [
   ["#", ""],
 ];
 
+/** Speed-dial entries for keys 1–9: a contact or a bare number. */
+export type SpeedDial = Partial<
+  Record<"1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9", Caller | string>
+>;
+
+function speedDialContact(
+  entry: Caller | string | undefined,
+): Caller | undefined {
+  if (!entry) return undefined;
+  return typeof entry === "string" ? { number: entry } : entry;
+}
+
 export interface KeypadProps {
   /** Called on touch-down, like a hardware keypad. */
   onKey: (digit: string) => void;
-  /** Long-press handler (used for 0 → +). */
+  /** Long-press handler (0 → +, speed dial). */
   onLongKey?: (digit: string) => void;
   disabled?: boolean;
   /** Maximum key diameter; keys shrink to fit narrow containers. */
   keySize?: number;
-  /** Key fill. Defaults to the theme surface. */
+  /** Key fill. Defaults to the theme's `keyBackground`. */
   keyColor?: string;
-  /** Digit colour. Defaults to the theme foreground. */
+  /** Digit colour. Defaults to the theme's `keyForeground`. */
   textColor?: string;
+  /** Hide the ABC/DEF letters under the digits. */
+  showLetters?: boolean;
+  /** Keys with a speed-dial entry show a dot and announce who they call. */
+  speedDial?: SpeedDial;
   accessibilityLabel?: string;
 }
 
@@ -45,81 +79,124 @@ export function Keypad({
   keySize = 76,
   keyColor,
   textColor,
-  accessibilityLabel = "Dial pad",
+  showLetters = true,
+  speedDial,
+  accessibilityLabel,
 }: KeypadProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [width, setWidth] = useState(0);
   const gap = width ? Math.min(28, Math.max(12, width * 0.07)) : 20;
   const size = width
     ? Math.max(52, Math.min(keySize, (width - gap * 2) / 3))
     : keySize;
-  const fg = textColor ?? theme.foreground;
+  const fg = textColor ?? theme.keyForeground;
   return (
     <View
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel ?? labels.dialPad}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={{
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        columnGap: gap,
-        rowGap: Math.round(gap * 0.7),
         alignSelf: "stretch",
+        alignItems: "center",
+        rowGap: Math.round(gap * 0.7),
         paddingHorizontal: 4,
       }}
     >
-      {KEYS.map(([digit, letters]) => (
-        <View key={digit} style={{ width: size, alignItems: "center" }}>
-          <PressableScale
-            accessibilityLabel={digit === "*" ? "star" : digit === "#" ? "pound" : digit}
-            accessibilityHint={digit === "0" && onLongKey ? "Long press for plus" : undefined}
-            disabled={disabled}
-            scaleTo={0.9}
-            delayPressIn={0}
-            onPressIn={() => onKey(digit)}
-            onLongPress={onLongKey ? () => onLongKey(digit) : undefined}
-            delayLongPress={450}
-            testID={`key-${digit}`}
-            style={{
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: keyColor ?? theme.surface,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            pressedStyle={{ backgroundColor: theme.pressed }}
-          >
-            <PhoneText
-              size={Math.round(size * 0.42)}
-              weight="400"
-              color={fg}
-              style={{ lineHeight: Math.round(size * 0.48), marginTop: letters ? 2 : 0 }}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            >
-              {digit}
-            </PhoneText>
-            {letters ? (
-              <PhoneText
-                size={Math.max(8, Math.round(size * 0.125))}
-                weight="700"
-                color={theme.muted}
-                style={{ letterSpacing: 1.6, lineHeight: Math.round(size * 0.16) }}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              >
-                {letters}
-              </PhoneText>
-            ) : null}
-          </PressableScale>
+      {[0, 3, 6, 9].map((row) => (
+        // Explicit rows keep the keypad 3×4 at every key size.
+        <View key={row} style={{ flexDirection: "row", columnGap: gap }}>
+          {KEYS.slice(row, row + 3).map(([digit, letters]) => {
+            const quick = speedDialContact(
+              speedDial?.[digit as keyof SpeedDial],
+            );
+            const hint =
+              quick && onLongKey
+                ? labels.speedDialHint(quick.name ?? quick.number)
+                : digit === "0" && onLongKey
+                  ? labels.longPressPlus
+                  : undefined;
+            const subtitle = showLetters ? letters : digit === "0" ? "+" : "";
+            return (
+              <View key={digit} style={{ width: size, alignItems: "center" }}>
+                <PressableScale
+                  accessibilityLabel={
+                    digit === "*"
+                      ? labels.star
+                      : digit === "#"
+                        ? labels.pound
+                        : digit
+                  }
+                  accessibilityHint={hint}
+                  disabled={disabled}
+                  scaleTo={0.9}
+                  delayPressIn={0}
+                  onPressIn={() => onKey(digit)}
+                  onLongPress={onLongKey ? () => onLongKey(digit) : undefined}
+                  delayLongPress={450}
+                  testID={`key-${digit}`}
+                  style={{
+                    width: size,
+                    height: size,
+                    borderRadius: controlRadius(theme, size),
+                    backgroundColor: keyColor ?? theme.keyBackground,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  pressedStyle={{ backgroundColor: theme.pressed }}
+                >
+                  <PhoneText
+                    size={Math.round(size * 0.42)}
+                    weight="400"
+                    color={fg}
+                    style={{
+                      lineHeight: Math.round(size * 0.48),
+                      marginTop: subtitle ? 2 : 0,
+                    }}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                  >
+                    {digit}
+                  </PhoneText>
+                  {subtitle ? (
+                    <PhoneText
+                      size={Math.max(8, Math.round(size * 0.125))}
+                      weight="700"
+                      color={theme.muted}
+                      style={{
+                        letterSpacing: 1.6,
+                        lineHeight: Math.round(size * 0.16),
+                      }}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                    >
+                      {subtitle}
+                    </PhoneText>
+                  ) : null}
+                  {quick ? (
+                    <View
+                      pointerEvents="none"
+                      style={{
+                        position: "absolute",
+                        top: size * 0.14,
+                        right: size * 0.2,
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: theme.accent,
+                      }}
+                    />
+                  ) : null}
+                </PressableScale>
+              </View>
+            );
+          })}
         </View>
       ))}
     </View>
   );
 }
 
-export interface DialerProps {
+export interface DialerProps extends ContactSuggestionOptions {
   value?: string;
   onChange?: (value: string) => void;
   showKeypad?: boolean;
@@ -128,6 +205,15 @@ export interface DialerProps {
   placeholder?: string;
   /** Maximum keypad key diameter. */
   keySize?: number;
+  /** Suggest contacts as digits are typed. Defaults to true when a source exists. */
+  suggestions?: boolean;
+  /** Long-press 1–9 on an empty keypad to call these contacts. */
+  speedDial?: SpeedDial;
+  /** Hide the letters under keypad digits. */
+  showLetters?: boolean;
+  /** Called when a suggestion is chosen. */
+  onContactSelect?: (contact: Caller) => void;
+  renderAvatar?: (caller: Caller) => ReactNode;
 }
 
 function displaySize(length: number): number {
@@ -139,21 +225,34 @@ function displaySize(length: number): number {
 }
 
 /**
- * Standalone dial pad. While idle it composes a number and places the call; during a
- * connected call its keys send DTMF and the display shows the digits sent.
+ * Standalone dial pad. While idle it composes a number, suggests matching contacts,
+ * and places the call; during a connected call its keys send DTMF and the display
+ * shows the digits sent.
  */
 export function Dialer({
   value: controlled,
   onChange,
   showKeypad = true,
   caller,
-  placeholder = "Enter a number",
+  placeholder,
   keySize,
+  suggestions = true,
+  contacts,
+  searchContacts,
+  recents,
+  limit,
+  speedDial,
+  showLetters,
+  onContactSelect,
+  renderAvatar,
 }: DialerProps): ReactElement {
   const { state, client } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
+  const format = usePhoneNumberFormatter();
   const [localValue, setLocalValue] = useState("");
   const [sent, setSent] = useState("");
+  const [chosen, setChosen] = useState<Caller | undefined>();
   const value = controlled ?? localValue;
   const update = (next: string) => {
     setLocalValue(next);
@@ -165,9 +264,34 @@ export function Dialer({
   useEffect(() => {
     if (!inCall) setSent("");
   }, [inCall]);
-  const call = () => action(() => client.call(value, caller));
+  const matches = useContactSuggestions(suggestions && canDial ? value : "", {
+    contacts,
+    searchContacts,
+    recents,
+    limit,
+  });
+  // The identity for this number: a chosen suggestion, the caller prop, or an exact match.
+  const identity = useMemo<Partial<Caller> | undefined>(() => {
+    const query = dialQuery(value);
+    if (!query) return undefined;
+    if (chosen && dialQuery(chosen.number) === query) return chosen;
+    if (caller?.number && dialQuery(caller.number) === query) return caller;
+    return matches.find((match) => dialQuery(match.contact.number) === query)
+      ?.contact;
+  }, [value, chosen, caller, matches]);
+  const callNumber = (number: string, who?: Partial<Caller>) =>
+    action(() => client.call(number, who));
+  const call = () => callNumber(value, identity);
+  const select = (contact: Caller) => {
+    setChosen(contact);
+    update(contact.number);
+    onContactSelect?.(contact);
+  };
   const shown = inCall ? sent : value;
   const callDisabled = !value.trim() || !canDial || !ready;
+  const exact =
+    identity?.name &&
+    !matches.some((m) => m.contact.number !== identity.number);
 
   if (!showKeypad && !inCall)
     return (
@@ -187,7 +311,7 @@ export function Dialer({
           <TextInput
             value={value}
             onChangeText={update}
-            placeholder={placeholder}
+            placeholder={placeholder ?? labels.dialPlaceholder}
             placeholderTextColor={theme.muted}
             keyboardType="phone-pad"
             autoComplete="tel"
@@ -196,38 +320,66 @@ export function Dialer({
             maxLength={160}
             editable={canDial}
             onSubmitEditing={() => !callDisabled && call()}
-            accessibilityLabel="Phone number or SIP address"
+            accessibilityLabel={labels.numberField}
             selectionColor={theme.accent}
-            style={{ flex: 1, fontSize: 18, color: theme.foreground, fontFamily: theme.fontFamily, paddingVertical: 12 }}
+            style={{
+              flex: 1,
+              fontSize: 18,
+              color: theme.foreground,
+              fontFamily: theme.fontFamily,
+              paddingVertical: 12,
+            }}
           />
           <IconButton
             icon={Delete}
-            accessibilityLabel="Delete last digit"
+            accessibilityLabel={labels.deleteDigit}
             disabled={!value || !canDial}
             onPress={() => update(value.slice(0, -1))}
             onLongPress={() => update("")}
           />
         </View>
+        {suggestions && !exact ? (
+          <ContactSuggestions
+            matches={matches}
+            onSelect={select}
+            onCall={(contact) => callNumber(contact.number, contact)}
+            renderAvatar={renderAvatar}
+          />
+        ) : null}
         <Button
-          label="Call"
+          label={labels.call}
           icon={Phone}
           disabled={callDisabled}
           onPress={call}
-          accessibilityHint={ready ? undefined : "Connect an account to make calls"}
+          accessibilityHint={ready ? undefined : labels.connectToCall}
         />
       </View>
     );
 
   return (
-    <View style={{ alignItems: "center", gap: 18, alignSelf: "stretch" }}>
-      <View style={{ alignSelf: "stretch", alignItems: "center", minHeight: 52, justifyContent: "center", paddingHorizontal: 12 }}>
+    <View style={{ alignItems: "center", gap: 16, alignSelf: "stretch" }}>
+      <View
+        style={{
+          alignSelf: "stretch",
+          alignItems: "center",
+          minHeight: 52,
+          justifyContent: "center",
+          paddingHorizontal: 12,
+          gap: 6,
+          zIndex: 10,
+        }}
+      >
         {inCall ? (
           <PhoneText
             size={displaySize(shown.length)}
             weight="300"
             numberOfLines={1}
             style={{ letterSpacing: 1, fontVariant: ["tabular-nums"] }}
-            accessibilityLabel={shown ? `Sent ${shown.split("").join(" ")}` : "Keypad"}
+            accessibilityLabel={
+              shown
+                ? labels.sentDigits(shown.split("").join(" "))
+                : labels.keypad
+            }
           >
             {shown || " "}
           </PhoneText>
@@ -235,7 +387,7 @@ export function Dialer({
           <TextInput
             value={value}
             onChangeText={update}
-            placeholder={placeholder}
+            placeholder={placeholder ?? labels.dialPlaceholder}
             placeholderTextColor={theme.muted}
             // The keypad is the input; still allow paste via long press.
             showSoftInputOnFocus={false}
@@ -243,7 +395,7 @@ export function Dialer({
             autoComplete="tel"
             maxLength={160}
             editable={canDial}
-            accessibilityLabel="Phone number or SIP address"
+            accessibilityLabel={labels.numberField}
             selectionColor={theme.accent}
             testID="dial-input"
             style={{
@@ -258,15 +410,29 @@ export function Dialer({
             }}
           />
         )}
-        {!inCall && caller?.name && caller.number === value ? (
-          <PhoneText size={14} weight="500" color={theme.accent}>
-            {caller.name}
+        {!inCall && exact ? (
+          <PhoneText
+            size={14}
+            weight="600"
+            color={theme.accent}
+            numberOfLines={1}
+          >
+            {identity?.name}
           </PhoneText>
+        ) : !inCall && suggestions ? (
+          <ContactSuggestions
+            matches={matches}
+            onSelect={select}
+            onCall={(contact) => callNumber(contact.number, contact)}
+            renderAvatar={renderAvatar}
+          />
         ) : null}
       </View>
       <Keypad
         keySize={keySize}
-        accessibilityLabel={inCall ? "In-call keypad" : "Dial pad"}
+        showLetters={showLetters}
+        speedDial={inCall ? undefined : speedDial}
+        accessibilityLabel={inCall ? labels.inCallKeypad : labels.dialPad}
         disabled={!canDial && !inCall}
         onKey={(digit) => {
           if (inCall) {
@@ -281,16 +447,35 @@ export function Dialer({
           inCall
             ? undefined
             : (digit) => {
-                if (digit === "0" && value.endsWith("0")) update(`${value.slice(0, -1)}+`);
+                const quick = speedDialContact(
+                  speedDial?.[digit as keyof SpeedDial],
+                );
+                // The press already typed this digit; a lone digit means "speed dial".
+                if (quick && value === digit && ready) {
+                  update("");
+                  callNumber(quick.number, quick);
+                } else if (digit === "0" && value.endsWith("0"))
+                  update(`${value.slice(0, -1)}+`);
               }
         }
       />
       {canDial ? (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", alignSelf: "stretch" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            alignSelf: "stretch",
+          }}
+        >
           <View style={{ flex: 1 }} />
           <PressableScale
-            accessibilityLabel={value.trim() ? `Call ${value}` : "Start call"}
-            accessibilityHint={ready ? undefined : "Connect an account to make calls"}
+            accessibilityLabel={
+              value.trim()
+                ? labels.callNumber(identity?.name ?? format(value))
+                : labels.startCall
+            }
+            accessibilityHint={ready ? undefined : labels.connectToCall}
             disabled={callDisabled}
             onPress={call}
             scaleTo={0.9}
@@ -298,21 +483,26 @@ export function Dialer({
             style={{
               width: 72,
               height: 72,
-              borderRadius: 36,
-              backgroundColor: theme.accent,
+              borderRadius: controlRadius(theme, 72),
+              backgroundColor: theme.answer,
               alignItems: "center",
               justifyContent: "center",
             }}
             pressedStyle={{ opacity: 0.85 }}
           >
-            <Phone size={30} color={theme.accentForeground} fill={theme.accentForeground} strokeWidth={1.5} />
+            <Phone
+              size={30}
+              color={theme.answerForeground}
+              fill={theme.answerForeground}
+              strokeWidth={1.5}
+            />
           </PressableScale>
           <View style={{ flex: 1, alignItems: "center" }}>
             {value ? (
               <IconButton
                 icon={Delete}
                 size={24}
-                accessibilityLabel="Delete last digit"
+                accessibilityLabel={labels.deleteDigit}
                 onPress={() => update(value.slice(0, -1))}
                 onLongPress={() => update("")}
               />

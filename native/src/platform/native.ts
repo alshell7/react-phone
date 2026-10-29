@@ -105,7 +105,9 @@ export function createNativeMediaAdapter(): MediaAdapter {
         constraints as never,
       ) as unknown as Promise<PhoneMediaStream>,
     createStream: (tracks) =>
-      new (required().MediaStream)(tracks as never) as unknown as PhoneMediaStream,
+      new (required().MediaStream)(
+        tracks as never,
+      ) as unknown as PhoneMediaStream,
     createPlayer: () => new NativeAudioPlayer(),
     openSettings: () => Linking.openSettings(),
   };

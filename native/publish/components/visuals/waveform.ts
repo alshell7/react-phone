@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { ReactElement } from "../../react-types.d.ts";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import { usePhoneTheme } from "../theme.ts";
+import { usePhoneLabels } from "../locale.ts";
 
 /** Visual-only waveform. Media acquisition belongs to the phone, not this component. */
 import { jsx as _jsx } from "react/jsx-runtime";
@@ -27,9 +28,10 @@ export function Waveform({
   barColor,
   height = 64,
   style,
-  accessibilityLabel = "Waveform"
+  accessibilityLabel
 }: WaveformProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [width, setWidth] = useState(0);
   const bw = Math.max(1, barWidth);
   const gap = Math.max(0, barGap);
@@ -42,7 +44,7 @@ export function Waveform({
   return /*#__PURE__*/_jsx(View, {
     accessible: true,
     accessibilityRole: "image",
-    accessibilityLabel: accessibilityLabel,
+    accessibilityLabel: accessibilityLabel ?? labels.waveform,
     onLayout: event => setWidth(event.nativeEvent.layout.width),
     style: [{
       height,

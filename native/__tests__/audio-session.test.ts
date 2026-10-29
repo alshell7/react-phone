@@ -25,14 +25,18 @@ describe("InCallManager audio session", () => {
   });
   it("optionally plays the system ringtone and stops it when answered or declined", () => {
     const icm = manager();
-    const session = createInCallManagerAudioSession(icm, { systemRingtone: true });
+    const session = createInCallManagerAudioSession(icm, {
+      systemRingtone: true,
+    });
     session.start?.("ringing");
     expect(icm.startRingtone).toHaveBeenCalledWith("_DEFAULT_");
     session.start?.("call");
     expect(icm.stopRingtone).toHaveBeenCalledTimes(1);
     session.stop?.();
     const declined = manager();
-    const other = createInCallManagerAudioSession(declined, { systemRingtone: true });
+    const other = createInCallManagerAudioSession(declined, {
+      systemRingtone: true,
+    });
     other.start?.("ringing");
     other.stop?.();
     expect(declined.stopRingtone).toHaveBeenCalledTimes(1);

@@ -31,7 +31,8 @@ export class Peer extends EventTarget {
   getReceivers = () => [];
   getSenders = () => this.senders;
   getStats = jest.fn(async () => ({
-    forEach: (fn: (stat: Record<string, unknown>) => void) => this.stats.forEach(fn),
+    forEach: (fn: (stat: Record<string, unknown>) => void) =>
+      this.stats.forEach(fn),
   }));
 }
 
@@ -83,7 +84,10 @@ export const jssipMock = {
 
 export const ua = (): MockUA => uas[uas.length - 1];
 
-export function createPlayer(): RemoteAudioPlayer & { play: jest.Mock; setVolume: jest.Mock } {
+export function createPlayer(): RemoteAudioPlayer & {
+  play: jest.Mock;
+  setVolume: jest.Mock;
+} {
   return {
     play: jest.fn(async () => {}),
     setVolume: jest.fn(),
@@ -116,7 +120,11 @@ export function createMedia(overrides: Partial<MediaAdapter> = {}) {
   return { media, getUserMedia: media.getUserMedia as jest.Mock, player };
 }
 
-export const silent = { impact: jest.fn(), startRinging: jest.fn(), stopRinging: jest.fn() };
+export const silent = {
+  impact: jest.fn(),
+  startRinging: jest.fn(),
+  stopRinging: jest.fn(),
+};
 
 export const config = {
   websocketUrl: "wss://voice.example.com/ws",

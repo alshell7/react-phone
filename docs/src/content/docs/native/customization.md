@@ -9,22 +9,79 @@ description: Theme tokens, light/dark/system appearance, caller identity and slo
 <SipPhone
   theme={{
     appearance: "system", // "light" (default) | "dark" | "system"
-    accent: "#285dab",
+    preset: "ocean", // forest (default) | ocean | midnight | graphite | sunset | lavender
+    accent: "#285dab", // any token overrides the preset
+    answer: "#1e9e4a", // answer and call buttons
+    controlShape: "rounded", // "circle" (default) | "rounded"
     radius: 24,
     fontFamily: "Inter",
   }}
 />
 ```
 
-| Token                                   | Light default | Dark default |
-| --------------------------------------- | ------------- | ------------ |
-| `accent` / `accentForeground`           | `#2e5945` / white | `#b8daa2` / `#17291e` |
-| `background` / `surface`                | white / `#f4f6f3` | `#1b211d` / `#273029` |
-| `foreground` / `muted` / `border`       | `#1f2621` / `#687169` / `#e5e9e3` | `#f2f4ef` / `#a9b4a7` / `#36403a` |
-| `danger` / `dangerForeground`           | `#c2413d` / white | `#ec8f89` / `#2a1512` |
-| `radius`                                | `20`          | `20`         |
+<div class="widget-gallery">
+<img src="/react-phone/media/native/theme-midnight.png" alt="Midnight preset, dark, with rounded controls and a custom Notes button" width="240" />
+<img src="/react-phone/media/native/theme-sunset-es.png" alt="Sunset preset with rounded keys, a green call button, and Spanish labels" width="240" />
+</div>
 
-Tints (selected states, decline fills, pressed keys) are derived from your tokens. Tokens are scoped per phone, so an island and a phone tab can differ. Use `<PhoneRoot theme={…}>` and `usePhoneTheme()` to style your own components with the resolved palette.
+### Presets
+
+Each preset has a tuned light **and** dark palette, so `appearance: "system"` keeps working. `phoneThemes` exports them if you want to build your own.
+
+| Preset      | Light accent | Dark accent |
+| ----------- | ------------ | ----------- |
+| `forest`    | `#2e5945`    | `#b8daa2`   |
+| `ocean`     | `#1f5fbf`    | `#8fbaf5`   |
+| `midnight`  | `#4b4fd1`    | `#a9abff`   |
+| `graphite`  | `#24282c`    | `#eceef0`   |
+| `sunset`    | `#b8482a`    | `#ffab8a`   |
+| `lavender`  | `#6a4dd6`    | `#c6b6ff`   |
+
+### Tokens
+
+| Token                                         | Default                         | Used for                                   |
+| --------------------------------------------- | ------------------------------- | ------------------------------------------ |
+| `accent` / `accentForeground`                 | Preset                          | Selected states, links, highlights          |
+| `answer` / `answerForeground`                 | `accent`                        | Answer, call, and slide-to-answer           |
+| `background` / `surface`                      | Preset                          | Screens and cards / buttons and fills       |
+| `foreground` / `muted` / `border`             | Preset                          | Text, secondary text, dividers              |
+| `danger` / `dangerForeground`                 | Preset                          | End call, decline, errors                   |
+| `keyBackground` / `keyForeground`             | `surface` / `foreground`        | Keypad keys                                 |
+| `islandBackground` / `islandForeground`       | Near-black / off-white          | The collapsed island capsule                |
+| `controlShape`                                | `circle`                        | Round buttons and keys (`rounded` squircles)|
+| `radius`                                      | `20`                            | Cards and sheets                            |
+| `fontFamily`                                  | System                          | All text                                    |
+
+Tints (selected states, decline fills, pressed keys) are derived from your tokens, and text on custom colours is chosen for contrast. Tokens are scoped per phone, so an island and a phone tab can differ. Use `<PhoneRoot theme={…}>` with `usePhoneTheme()` and `controlRadius(theme, size)` to style your own components consistently.
+
+## Languages and wording
+
+Every visible string and accessibility label comes from `labels`. Pass the keys you want to change; everything else stays English:
+
+```tsx
+<SipPhone
+  labels={{
+    answer: "Contestar",
+    decline: "Rechazar",
+    mute: "Silenciar",
+    incomingCall: "Llamada entrante",
+    callNumber: (number) => `Llamar a ${number}`,
+    endReasons: { "Missed call": "Llamada perdida", "Call ended": "Llamada finalizada" },
+  }}
+/>
+```
+
+`defaultPhoneLabels` lists every key (about 150, including the keypad, island, Recents, audio settings, and connection form). Parameterized strings are functions. `endReasons` translates the client's readable end reasons ("Call ended", "Missed call", "Busy", "No answer", "Number not found", …). Use `usePhoneLabels()` in your own components. Recents dates and times use the device locale automatically.
+
+## Number formatting
+
+```tsx
+import { parsePhoneNumber } from "libphonenumber-js";
+
+<SipPhone formatNumber={(number) => parsePhoneNumber(number, "US")?.formatNational() ?? number} />;
+```
+
+`formatNumber` changes how numbers are **displayed** (call screen, island, suggestions, Recents); it never changes what is dialed. Return the input unchanged for extensions and SIP addresses.
 
 ## Caller identity
 

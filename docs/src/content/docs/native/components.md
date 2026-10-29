@@ -51,11 +51,14 @@ One provider owns one line; every component under it shares that call.
 | `ConnectionForm`, `ConnectionStatus`        | Credentials (never persisted) and registration status               |
 | `AudioSettings`, `VolumeSlider`             | Microphone access, device choice (web), volume                       |
 | `CallHistory`                               | Recents from real call history                                       |
+| `ContactSuggestions`, `useContactSuggestions` | Smart-dial suggestions for your own keypad                          |
 | `ErrorBanner`, `CallTimer`                  | Actionable errors (with Open Settings) and elapsed time              |
 | `CallOrb`, `CallWaveform`, `CallBarVisualizer`, `Orb`, `LiveWaveform`, `BarVisualizer`, `Waveform` | Visuals |
 | `RoundButton`, `Button`, `IconButton`, `PhoneText`, `PressableScale` | Primitives that follow the theme             |
 
-Hooks: `usePhone`, `useAutoDial`, `useCallActivity`, `useReducedMotion`, `useDraggable`, `usePhoneTheme`, `usePhoneMotion`.
+Hooks: `usePhone`, `useAutoDial`, `useCallActivity`, `useContactSuggestions`, `useReducedMotion`, `useDraggable`, `usePhoneTheme`, `usePhoneLabels`, `usePhoneNumberFormatter`, `usePhoneMotion`.
+
+Helpers: `matchContacts`, `toKeypadDigits`, `resolvePhoneTheme`, `phoneThemes`, `controlRadius`, `readableColor`, `defaultPhoneLabels`, `endReasonLabel`, `formatDuration`, `normalizeTarget`.
 
 ## Headless client
 

@@ -4,7 +4,11 @@ import type {
   PhoneMediaStream,
   RemoteAudioPlayer,
 } from "./media.ts";
-import { PhoneTones, type PhoneToneEvent, type PhoneToneOptions } from "./tones.ts";
+import {
+  PhoneTones,
+  type PhoneToneEvent,
+  type PhoneToneOptions,
+} from "./tones.ts";
 
 /** Audio lifetime is owned by PhoneClient, not by whichever visual preset is mounted. */
 export class PhoneAudio {
@@ -15,7 +19,10 @@ export class PhoneAudio {
     private readonly media: MediaAdapter,
     haptics: HapticsAdapter,
   ) {
-    this.tones = new PhoneTones(haptics, media.platform === "ios" || media.platform === "android");
+    this.tones = new PhoneTones(
+      haptics,
+      media.platform === "ios" || media.platform === "android",
+    );
   }
 
   private get remote(): RemoteAudioPlayer {
@@ -38,7 +45,11 @@ export class PhoneAudio {
   async resumeTones(): Promise<void> {
     await this.tones.resume();
   }
-  async play(stream: PhoneMediaStream, volume: number, sinkId: string): Promise<void> {
+  async play(
+    stream: PhoneMediaStream,
+    volume: number,
+    sinkId: string,
+  ): Promise<void> {
     await this.remote.play(stream, volume, sinkId);
   }
   setVolume(volume: number): void {

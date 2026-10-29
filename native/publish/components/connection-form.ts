@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Eye, EyeOff, Phone, ShieldCheck } from "lucide-
 import { usePhone } from "../react/phone-provider.ts";
 import type { SipConfig } from "../core/types.ts";
 import { usePhoneTheme } from "./theme.ts";
+import { usePhoneLabels } from "./locale.ts";
 import { Button, Field, IconButton, PhoneText, PressableScale } from "./primitives.ts";
 import { action } from "./status.ts";
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
@@ -25,6 +26,7 @@ export function ConnectionForm({
     client
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [username, setUsername] = useState(defaultValues.authorizationUsername ?? "");
   const [password, setPassword] = useState("");
   const [reveal, setReveal] = useState(false);
@@ -71,19 +73,19 @@ export function ConnectionForm({
     },
     children: [/*#__PURE__*/_jsx(Field, {
       ...text,
-      label: "Username",
+      label: labels.username,
       value: username,
       onChangeText: setUsername,
-      placeholder: "Your SIP username",
+      placeholder: labels.usernamePlaceholder,
       autoComplete: "username",
       textContentType: "username",
       testID: "sip-username"
     }), /*#__PURE__*/_jsx(Field, {
       ...text,
-      label: "Password",
+      label: labels.password,
       value: password,
       onChangeText: setPassword,
-      placeholder: "Enter your SIP password",
+      placeholder: labels.passwordPlaceholder,
       secureTextEntry: !reveal,
       autoComplete: "password",
       textContentType: "password",
@@ -92,12 +94,12 @@ export function ConnectionForm({
       testID: "sip-password",
       trailing: /*#__PURE__*/_jsx(IconButton, {
         icon: reveal ? EyeOff : Eye,
-        accessibilityLabel: reveal ? "Hide password" : "Show password",
+        accessibilityLabel: reveal ? labels.hidePassword : labels.showPassword,
         onPress: () => setReveal(!reveal)
       })
     }), /*#__PURE__*/_jsxs(PressableScale, {
       onPress: () => setAdvanced(!advanced),
-      accessibilityLabel: "Server and network settings",
+      accessibilityLabel: labels.serverSettings,
       accessibilityState: {
         expanded: advanced
       },
@@ -112,7 +114,7 @@ export function ConnectionForm({
         size: 14,
         weight: "600",
         color: theme.accent,
-        children: "Server & network settings"
+        children: labels.serverSettings
       }), advanced ? /*#__PURE__*/_jsx(ChevronUp, {
         size: 16,
         color: theme.accent
@@ -126,16 +128,16 @@ export function ConnectionForm({
       },
       children: [/*#__PURE__*/_jsx(Field, {
         ...text,
-        label: "SIP address",
+        label: labels.sipAddress,
         value: uri,
         onChangeText: setUri,
         placeholder: "sip:1001@pbx.example.com",
         keyboardType: "email-address",
-        hint: "The extension in this address can differ from your username.",
+        hint: labels.sipAddressHint,
         testID: "sip-uri"
       }), /*#__PURE__*/_jsx(Field, {
         ...text,
-        label: "WebSocket server",
+        label: labels.websocketServer,
         value: server,
         onChangeText: setServer,
         placeholder: "wss://pbx.example.com/ws",
@@ -143,7 +145,7 @@ export function ConnectionForm({
         testID: "sip-server"
       }), /*#__PURE__*/_jsx(Field, {
         ...text,
-        label: "STUN / TURN server (optional)",
+        label: labels.iceServer,
         value: iceUrl,
         onChangeText: setIceUrl,
         placeholder: "turn:relay.example.com:3478",
@@ -151,12 +153,12 @@ export function ConnectionForm({
       }), iceUrl.startsWith("turn") ? /*#__PURE__*/_jsxs(_Fragment, {
         children: [/*#__PURE__*/_jsx(Field, {
           ...text,
-          label: "TURN username",
+          label: labels.turnUsername,
           value: turnUsername,
           onChangeText: setTurnUsername
         }), /*#__PURE__*/_jsx(Field, {
           ...text,
-          label: "TURN password",
+          label: labels.turnPassword,
           value: turnPassword,
           onChangeText: setTurnPassword,
           secureTextEntry: true
@@ -175,13 +177,13 @@ export function ConnectionForm({
       },
       children: accountError
     }) : null, /*#__PURE__*/_jsx(Button, {
-      label: pending ? "Connecting…" : "Connect account",
+      label: pending ? labels.connectingAccount : labels.connectAccount,
       icon: Phone,
       disabled: pending,
       onPress: submit,
       testID: "sip-connect"
     }), pending ? /*#__PURE__*/_jsx(Button, {
-      label: "Cancel connection",
+      label: labels.cancelConnection,
       tone: "secondary",
       onPress: () => client.disconnect()
     }) : null, /*#__PURE__*/_jsxs(View, {
@@ -197,7 +199,7 @@ export function ConnectionForm({
       }), /*#__PURE__*/_jsx(PhoneText, {
         size: 12,
         color: theme.muted,
-        children: "Credentials stay in memory for this session."
+        children: labels.credentialsNote
       })]
     })]
   });

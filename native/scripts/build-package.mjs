@@ -25,7 +25,9 @@ async function save(outputFile, output) {
   if (check) {
     const existing = await readFile(destination, "utf8").catch(() => "");
     if (normalize(existing) !== output)
-      throw new Error(`Stale publish/${outputFile}. Run npm run package:build.`);
+      throw new Error(
+        `Stale publish/${outputFile}. Run npm run package:build.`,
+      );
   } else {
     await mkdir(new URL("./", destination), { recursive: true });
     await writeFile(destination, output);
@@ -67,19 +69,27 @@ for (const filename of files) {
             if (!typeOnly.length) return;
             for (const specifier of typeOnly)
               if (!reactTypeNames.has(specifier.imported?.name))
-                throw new Error(`Add ${specifier.imported?.name} to the React declaration bridge.`);
-            const bridge = "../".repeat(filename.split("/").length - 1) + "react-types.d.ts";
+                throw new Error(
+                  `Add ${specifier.imported?.name} to the React declaration bridge.`,
+                );
+            const bridge =
+              "../".repeat(filename.split("/").length - 1) + "react-types.d.ts";
             const declaration = t.importDeclaration(
               typeOnly.map((s) => t.importSpecifier(s.local, s.imported)),
               t.stringLiteral(bridge.startsWith(".") ? bridge : "./" + bridge),
             );
             declaration.importKind = "type";
-            path.node.specifiers = path.node.specifiers.filter((s) => !typeOnly.includes(s));
+            path.node.specifiers = path.node.specifiers.filter(
+              (s) => !typeOnly.includes(s),
+            );
             path.insertAfter(declaration);
             if (!path.node.specifiers.length) path.remove();
           },
           StringLiteral(path) {
-            if (path.node.value.startsWith(".") && path.node.value.endsWith(".tsx"))
+            if (
+              path.node.value.startsWith(".") &&
+              path.node.value.endsWith(".tsx")
+            )
               path.node.value = path.node.value.replace(/\.tsx$/, ".ts");
           },
         },
@@ -95,7 +105,8 @@ for (const filename of files) {
 const extras = (await readdir(target, { recursive: true }))
   .map((file) => file.replaceAll("\\", "/"))
   .filter((file) => /\.tsx?$/.test(file) && !expected.has(file));
-if (extras.length) throw new Error(`Remove obsolete generated files: ${extras.join(", ")}`);
+if (extras.length)
+  throw new Error(`Remove obsolete generated files: ${extras.join(", ")}`);
 console.log(
   `${check ? "Verified" : "Generated"} ${count} JSX-free TypeScript modules in ${fileURLToPath(target)}.`,
 );

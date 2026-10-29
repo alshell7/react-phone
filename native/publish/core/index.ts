@@ -10,5 +10,7 @@ export { createInCallManagerAudioSession } from "./audio-session.ts";
 export type { InCallManagerLike, InCallManagerSessionOptions } from "./audio-session.ts";
 export { phoneTonePresets, dtmfFrequencies, PhoneTones } from "./tones.ts";
 export type { PhoneToneOptions, PhoneTonePreset, PhoneToneEvent, TonePattern, ToneStep, AudioContextLike } from "./tones.ts";
+export { matchContacts, toKeypadDigits, keypadDigit, dialQuery } from "./contacts.ts";
+export type { ContactMatch } from "./contacts.ts";
 export { getCallVisualState } from "./visual-state.ts";
 export type { CallVisualState } from "./visual-state.ts";

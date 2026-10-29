@@ -4,10 +4,7 @@
  * with the individual controls for your own layout.
  * @module
  */
-export {
-  PhoneClient,
-  normalizeAudioLevel,
-} from "./core/phone-client.ts";
+export { PhoneClient, normalizeAudioLevel } from "./core/phone-client.ts";
 export type { PhoneCapabilities, AudioLevels } from "./core/phone-client.ts";
 export {
   formatDuration,
@@ -45,6 +42,13 @@ export type {
   ToneStep,
   AudioContextLike,
 } from "./core/tones.ts";
+export {
+  matchContacts,
+  toKeypadDigits,
+  keypadDigit,
+  dialQuery,
+} from "./core/contacts.ts";
+export type { ContactMatch } from "./core/contacts.ts";
 export { getCallVisualState } from "./core/visual-state.ts";
 export type { CallVisualState } from "./core/visual-state.ts";
 
@@ -90,14 +94,29 @@ export {
   PhoneRoot,
   usePhoneTheme,
   resolvePhoneTheme,
+  phoneThemes,
+  controlRadius,
+  readableColor,
   mixColors,
   withAlpha,
 } from "./components/theme.tsx";
 export type {
   PhoneRootProps,
   PhoneTheme,
+  PhoneThemePreset,
+  PhoneControlShape,
   ResolvedPhoneTheme,
 } from "./components/theme.tsx";
+export {
+  defaultPhoneLabels,
+  usePhoneLabels,
+  usePhoneNumberFormatter,
+  endReasonLabel,
+} from "./components/locale.tsx";
+export type {
+  PhoneLabels,
+  PhoneNumberFormatter,
+} from "./components/locale.tsx";
 export { usePhoneMotion } from "./components/motion.tsx";
 export type { PhoneMotion } from "./components/motion.tsx";
 export {
@@ -109,7 +128,19 @@ export type { ConnectionStatusProps } from "./components/status.tsx";
 export { CallerCard, Avatar } from "./components/caller-card.tsx";
 export type { CallerCardProps } from "./components/caller-card.tsx";
 export { Dialer, Keypad } from "./components/dialer.tsx";
-export type { DialerProps, KeypadProps } from "./components/dialer.tsx";
+export type {
+  DialerProps,
+  KeypadProps,
+  SpeedDial,
+} from "./components/dialer.tsx";
+export {
+  ContactSuggestions,
+  useContactSuggestions,
+} from "./components/contact-suggestions.tsx";
+export type {
+  ContactSuggestionOptions,
+  ContactSuggestionsProps,
+} from "./components/contact-suggestions.tsx";
 export {
   CallControls,
   IncomingCallActions,
@@ -120,6 +151,7 @@ export {
 export type {
   CallControl,
   CallControlsProps,
+  PhoneCustomControl,
   IncomingCallActionsProps,
   SlideToAnswerProps,
 } from "./components/call-controls.tsx";

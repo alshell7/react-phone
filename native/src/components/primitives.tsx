@@ -22,7 +22,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { usePhoneMotion } from "./motion.tsx";
-import { usePhoneTheme, withAlpha } from "./theme.tsx";
+import { controlRadius, usePhoneTheme, withAlpha } from "./theme.tsx";
 
 /** Lucide-compatible icon component. */
 export type PhoneIcon = (props: {
@@ -70,7 +70,9 @@ export function accessibilityStateProps(
   if (state.busy !== undefined) props["aria-busy"] = state.busy;
   if (state.checked !== undefined) props["aria-checked"] = state.checked;
   if (state.selected !== undefined)
-    props[role === "tab" || role === "option" ? "aria-selected" : "aria-pressed"] = state.selected;
+    props[
+      role === "tab" || role === "option" ? "aria-selected" : "aria-pressed"
+    ] = state.selected;
   return props;
 }
 
@@ -104,7 +106,10 @@ export function PressableScale({
       {...props}
       disabled={disabled}
       accessibilityRole={accessibilityRole}
-      {...accessibilityStateProps(accessibilityRole, { disabled: Boolean(disabled), ...accessibilityState })}
+      {...accessibilityStateProps(accessibilityRole, {
+        disabled: Boolean(disabled),
+        ...accessibilityState,
+      })}
       onPressIn={() => {
         setPressed(true);
         spring(scaleTo);
@@ -127,11 +132,7 @@ export function PressableScale({
 }
 
 export type RoundButtonTone =
-  | "neutral"
-  | "accent"
-  | "danger"
-  | "danger-soft"
-  | "glass";
+  "neutral" | "accent" | "answer" | "danger" | "danger-soft" | "glass";
 
 export interface RoundButtonProps {
   icon: PhoneIcon;
@@ -171,9 +172,13 @@ export function RoundButton({
   const fills: Record<RoundButtonTone, [string, string]> = {
     neutral: [theme.surface, theme.foreground],
     accent: [theme.accent, theme.accentForeground],
+    answer: [theme.answer, theme.answerForeground],
     danger: [theme.danger, theme.dangerForeground],
     "danger-soft": [theme.dangerSoft, theme.danger],
-    glass: [withAlpha(theme.foreground, theme.appearance === "dark" ? 0.14 : 0.07), theme.foreground],
+    glass: [
+      withAlpha(theme.foreground, theme.appearance === "dark" ? 0.14 : 0.07),
+      theme.foreground,
+    ],
   };
   const [background, foreground] = selected
     ? [theme.foreground, theme.background]
@@ -196,14 +201,18 @@ export function RoundButton({
         style={{
           width: size,
           height: size,
-          borderRadius: size / 2,
+          borderRadius: controlRadius(theme, size),
           backgroundColor: background,
           alignItems: "center",
           justifyContent: "center",
         }}
         pressedStyle={{ opacity: 0.82 }}
       >
-        <Icon size={Math.round(size * 0.38)} color={foreground} strokeWidth={1.9} />
+        <Icon
+          size={Math.round(size * 0.38)}
+          color={foreground}
+          strokeWidth={1.9}
+        />
       </PressableScale>
       {label ? (
         <PhoneText
@@ -640,11 +649,18 @@ export function StatusDot({
 }
 
 /** Thin themed separator. */
-export function Divider({ style }: { style?: StyleProp<ViewStyle> }): ReactElement {
+export function Divider({
+  style,
+}: {
+  style?: StyleProp<ViewStyle>;
+}): ReactElement {
   const theme = usePhoneTheme();
   return (
     <View
-      style={[{ height: 1, backgroundColor: theme.border, alignSelf: "stretch" }, style]}
+      style={[
+        { height: 1, backgroundColor: theme.border, alignSelf: "stretch" },
+        style,
+      ]}
     />
   );
 }

@@ -1,4 +1,9 @@
-import { mixColors, parseColor, resolvePhoneTheme, withAlpha } from "../src/components/theme.tsx";
+import {
+  mixColors,
+  parseColor,
+  resolvePhoneTheme,
+  withAlpha,
+} from "../src/components/theme.tsx";
 
 describe("theme tokens", () => {
   it("parses hex and rgb colours", () => {
@@ -15,9 +20,15 @@ describe("theme tokens", () => {
   });
   it("resolves light, dark, and system appearances with overrides", () => {
     expect(resolvePhoneTheme().appearance).toBe("light");
-    expect(resolvePhoneTheme({ appearance: "dark" }).background).toBe("#1b211d");
-    expect(resolvePhoneTheme({ appearance: "system" }, "dark").appearance).toBe("dark");
-    expect(resolvePhoneTheme({ appearance: "system" }, null).appearance).toBe("light");
+    expect(resolvePhoneTheme({ appearance: "dark" }).background).toBe(
+      "#1b211d",
+    );
+    expect(resolvePhoneTheme({ appearance: "system" }, "dark").appearance).toBe(
+      "dark",
+    );
+    expect(resolvePhoneTheme({ appearance: "system" }, null).appearance).toBe(
+      "light",
+    );
     const custom = resolvePhoneTheme({ accent: "#285dab", radius: 12 });
     expect(custom.accent).toBe("#285dab");
     expect(custom.radius).toBe(12);

@@ -13,10 +13,10 @@ import {
   embedCode,
   liveDefaults,
   tagsOf,
+  themePresets,
   type PlaygroundConfig,
 } from "./config";
 import { Chips, Input, Section, Swatches, Toggle } from "./ui";
-
 
 export function Inspector({
   config,
@@ -28,30 +28,56 @@ export function Inspector({
   const theme = usePhoneTheme();
   const { client, state, preview } = usePhone();
   const tab = config.inspectorTab;
-  const setTab = (inspectorTab: PlaygroundConfig["inspectorTab"]) => update({ inspectorTab });
+  const setTab = (inspectorTab: PlaygroundConfig["inspectorTab"]) =>
+    update({ inspectorTab });
   const [copied, setCopied] = useState(false);
   const busy = !["idle", "ended"].includes(state.status);
   const code = embedCode(config);
   return (
     <View style={{ gap: 22 }}>
-      <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 4, padding: 3, borderRadius: 12, backgroundColor: theme.surface }}>
-        {(["design", "behavior", "connection", "code"] as const).map((value) => {
-          const selected = tab === value;
-          return (
-            <Pressable
-              key={value}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              aria-selected={selected}
-              onPress={() => setTab(value)}
-              style={{ flex: 1, minHeight: 36, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundColor: selected ? theme.background : "transparent" }}
-            >
-              <Text style={{ fontSize: 13, fontWeight: selected ? "700" : "500", color: selected ? theme.foreground : theme.muted, textTransform: "capitalize" }}>
-                {value}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View
+        accessibilityRole="tablist"
+        style={{
+          flexDirection: "row",
+          gap: 4,
+          padding: 3,
+          borderRadius: 12,
+          backgroundColor: theme.surface,
+        }}
+      >
+        {(["design", "behavior", "connection", "code"] as const).map(
+          (value) => {
+            const selected = tab === value;
+            return (
+              <Pressable
+                key={value}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                aria-selected={selected}
+                onPress={() => setTab(value)}
+                style={{
+                  flex: 1,
+                  minHeight: 36,
+                  borderRadius: 9,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: selected ? theme.background : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: selected ? "700" : "500",
+                    color: selected ? theme.foreground : theme.muted,
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {value}
+                </Text>
+              </Pressable>
+            );
+          },
+        )}
       </View>
 
       {preview ? (
@@ -85,8 +111,52 @@ export function Inspector({
               ]}
             />
           </Section>
-          <Section title="Accent">
-            <Swatches value={config.accent} options={accents} onChange={(accent) => update({ accent })} />
+          <Section title="Theme">
+            <Chips
+              label="Theme"
+              value={config.themePreset}
+              onChange={(themePreset) => update({ themePreset })}
+              options={themePresets}
+            />
+          </Section>
+          <Section title="Accent override">
+            <Swatches
+              value={config.accent}
+              options={accents}
+              onChange={(accent) => update({ accent })}
+            />
+          </Section>
+          <Section title="Controls">
+            <Chips
+              label="Control shape"
+              value={config.controlShape}
+              onChange={(controlShape) => update({ controlShape })}
+              options={[
+                { value: "circle", label: "Circle" },
+                { value: "rounded", label: "Rounded" },
+              ]}
+            />
+            <Chips
+              label="Answer button"
+              value={config.answerColor}
+              onChange={(answerColor) => update({ answerColor })}
+              options={[
+                { value: "accent", label: "Accent answer" },
+                { value: "green", label: "Green answer" },
+              ]}
+            />
+          </Section>
+          <Section title="Language">
+            <Chips
+              label="Language"
+              value={config.language}
+              onChange={(language) => update({ language })}
+              options={[
+                { value: "en", label: "English" },
+                { value: "es", label: "Español" },
+                { value: "fr", label: "Français" },
+              ]}
+            />
           </Section>
           <Section title="Preset">
             <Chips
@@ -116,11 +186,27 @@ export function Inspector({
             />
           </Section>
           <Section title="Caller identity">
-            <Input label="Name" value={config.callerName} onChange={(callerName) => update({ callerName })} />
-            <Input label="Number" value={config.callerNumber} onChange={(callerNumber) => update({ callerNumber })} />
-            <Input label="Tags (comma separated)" value={config.callerTags} onChange={(callerTags) => update({ callerTags })} />
+            <Input
+              label="Name"
+              value={config.callerName}
+              onChange={(callerName) => update({ callerName })}
+            />
+            <Input
+              label="Number"
+              value={config.callerNumber}
+              onChange={(callerNumber) => update({ callerNumber })}
+            />
+            <Input
+              label="Tags (comma separated)"
+              value={config.callerTags}
+              onChange={(callerTags) => update({ callerTags })}
+            />
           </Section>
-          <Toggle label="Powered-by branding" value={config.branding} onChange={(branding) => update({ branding })} />
+          <Toggle
+            label="Powered-by branding"
+            value={config.branding}
+            onChange={(branding) => update({ branding })}
+          />
         </>
       ) : null}
 
@@ -187,11 +273,62 @@ export function Inspector({
                 { value: "off", label: "Off" },
               ]}
             />
-            <Toggle label="Haptics" hint="Keypad taps and call milestones" value={config.haptics} onChange={(haptics) => update({ haptics })} />
-            <Toggle label="Motion" hint="Reduce Motion in system settings always wins" value={config.motion} onChange={(motion) => update({ motion })} />
+            <Toggle
+              label="Haptics"
+              hint="Keypad taps and call milestones"
+              value={config.haptics}
+              onChange={(haptics) => update({ haptics })}
+            />
+            <Toggle
+              label="Motion"
+              hint="Reduce Motion in system settings always wins"
+              value={config.motion}
+              onChange={(motion) => update({ motion })}
+            />
           </Section>
           <Section title="Dialing">
-            <Input label="Prefilled number" value={config.defaultNumber} onChange={(defaultNumber) => update({ defaultNumber })} placeholder="Optional" />
+            <Toggle
+              label="Contact suggestions"
+              hint="Type 2 6 for Alex Morgan, or 70 for numbers. Sample contacts in Preview; Recents always."
+              value={config.suggestions}
+              onChange={(suggestions) => update({ suggestions })}
+            />
+            <Toggle
+              label="Speed dial"
+              hint="Long-press 1 for Voicemail, 2 for Front desk"
+              value={config.speedDial}
+              onChange={(speedDial) => update({ speedDial })}
+            />
+            <Toggle
+              label="Keypad letters"
+              value={config.keypadLetters}
+              onChange={(keypadLetters) => update({ keypadLetters })}
+            />
+            <Toggle
+              label="Format numbers"
+              hint="(415) 555-0134 for 10-digit numbers"
+              value={config.formatNumbers}
+              onChange={(formatNumbers) => update({ formatNumbers })}
+            />
+            <Input
+              label="Prefilled number"
+              value={config.defaultNumber}
+              onChange={(defaultNumber) => update({ defaultNumber })}
+              placeholder="Optional"
+            />
+          </Section>
+          <Section title="In-call buttons">
+            <Toggle
+              label="Button captions"
+              value={config.controlLabels}
+              onChange={(controlLabels) => update({ controlLabels })}
+            />
+            <Toggle
+              label="Custom Notes button"
+              hint="Your own control in the call grid"
+              value={config.notesControl}
+              onChange={(notesControl) => update({ notesControl })}
+            />
           </Section>
         </>
       ) : null}
@@ -217,8 +354,14 @@ export function Inspector({
           {config.mode === "live" ? (
             state.connection === "registered" ? (
               <View style={{ gap: 12 }}>
-                <Text style={{ fontSize: 15, color: theme.foreground }}>Registered and ready for calls.</Text>
-                <Button label="Disconnect" tone="secondary" onPress={() => client.disconnect()} />
+                <Text style={{ fontSize: 15, color: theme.foreground }}>
+                  Registered and ready for calls.
+                </Text>
+                <Button
+                  label="Disconnect"
+                  tone="secondary"
+                  onPress={() => client.disconnect()}
+                />
               </View>
             ) : (
               <ConnectionForm defaultValues={liveDefaults} />
@@ -229,8 +372,26 @@ export function Inspector({
 
       {tab === "code" ? (
         <Section title="Embed">
-          <View style={{ borderRadius: 14, backgroundColor: "#0f1411", padding: 14 }}>
-            <Text selectable style={{ color: "#d9e6dc", fontSize: 12, lineHeight: 18, fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "ui-monospace, SFMono-Regular, Menlo, monospace" }) }}>
+          <View
+            style={{
+              borderRadius: 14,
+              backgroundColor: "#0f1411",
+              padding: 14,
+            }}
+          >
+            <Text
+              selectable
+              style={{
+                color: "#d9e6dc",
+                fontSize: 12,
+                lineHeight: 18,
+                fontFamily: Platform.select({
+                  ios: "Menlo",
+                  android: "monospace",
+                  default: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                }),
+              }}
+            >
               {code}
             </Text>
           </View>
@@ -245,7 +406,9 @@ export function Inspector({
               });
             }}
           />
-          <Text style={{ fontSize: 12, color: theme.muted }}>Generated code never includes credentials.</Text>
+          <Text style={{ fontSize: 12, color: theme.muted }}>
+            Generated code never includes credentials.
+          </Text>
         </Section>
       ) : null}
     </View>

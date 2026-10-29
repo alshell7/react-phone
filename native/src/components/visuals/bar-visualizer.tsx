@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { usePhoneMotion } from "../motion.tsx";
 import { usePhoneTheme } from "../theme.tsx";
+import { usePhoneLabels } from "../locale.tsx";
 import type { CallVisualState } from "../../core/visual-state.ts";
 
 export interface BarVisualizerProps {
@@ -115,6 +116,7 @@ export function BarVisualizer({
   testID,
 }: BarVisualizerProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const count = Math.min(32, Math.max(1, Math.round(barCount) || 12));
   const moving = motion.enabled && animate;
@@ -147,7 +149,7 @@ export function BarVisualizer({
       testID={testID}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={`Voice bars: ${state}`}
+      accessibilityLabel={labels.voiceBars(state)}
       style={[
         {
           height,
@@ -161,7 +163,8 @@ export function BarVisualizer({
       ]}
     >
       {Array.from({ length: count }, (_, i) => {
-        const energy = moving && speech ? Math.max(0, Math.min(1, bands[i] ?? 0)) : 0;
+        const energy =
+          moving && speech ? Math.max(0, Math.min(1, bands[i] ?? 0)) : 0;
         const value = Math.min(high, Math.max(low, energy + 0.05));
         return (
           <Bar

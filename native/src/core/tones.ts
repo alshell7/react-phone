@@ -2,12 +2,7 @@ import { silentHaptics, type HapticsAdapter } from "./media.ts";
 
 /** Local audio cues are synthesized; no files, network requests or microphone needed. */
 export type PhoneToneEvent =
-  | "incoming"
-  | "outgoing"
-  | "ringing"
-  | "connected"
-  | "disconnected"
-  | "dtmf";
+  "incoming" | "outgoing" | "ringing" | "connected" | "disconnected" | "dtmf";
 export type PhoneTonePreset = "gentle" | "classic" | "minimal";
 
 /** Minimal Web Audio surface. Browsers and react-native-audio-api both satisfy it. */
@@ -179,7 +174,8 @@ export class PhoneTones {
   ) {}
 
   configure(options: PhoneToneOptions | false = {}): void {
-    const next: PhoneToneOptions = options === false ? { enabled: false } : options;
+    const next: PhoneToneOptions =
+      options === false ? { enabled: false } : options;
     // JSON drops functions, so compare the audio context factory by identity.
     if (
       JSON.stringify(next) === JSON.stringify(this.options) &&

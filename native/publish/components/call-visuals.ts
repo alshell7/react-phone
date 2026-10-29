@@ -6,6 +6,7 @@ import { useCallActivity } from "../react/use-call-activity.ts";
 import { usePhone } from "../react/phone-provider.ts";
 import { usePhoneMotion } from "./motion.ts";
 import { usePhoneTheme } from "./theme.ts";
+import { usePhoneLabels } from "./locale.ts";
 import { PhoneText } from "./primitives.ts";
 import { Orb, type OrbProps } from "./visuals/orb.ts";
 import { LiveWaveform, type LiveWaveformProps } from "./visuals/live-waveform.ts";
@@ -48,6 +49,7 @@ export function CallWaveform({
     preview
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const activity = useCallActivity(4);
   const latest = useRef(activity);
   latest.current = activity;
@@ -71,7 +73,7 @@ export function CallWaveform({
       size: 11,
       weight: "500",
       color: theme.muted,
-      children: preview ? "Simulated audio" : source === "local" ? muted ? "Microphone muted" : "Your microphone" : "Call audio"
+      children: preview ? labels.simulatedAudio : source === "local" ? muted ? labels.microphoneMuted : labels.yourMicrophone : labels.callAudio
     }) : null]
   });
 }

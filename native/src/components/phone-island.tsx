@@ -25,7 +25,15 @@ import {
   type PhoneProviderProps,
 } from "../react/phone-provider.tsx";
 import { useCallActivity } from "../react/use-call-activity.ts";
-import { PhoneRoot, mixColors, usePhoneTheme, withAlpha } from "./theme.tsx";
+import {
+  PhoneRoot,
+  controlRadius,
+  mixColors,
+  readableColor,
+  usePhoneTheme,
+  withAlpha,
+} from "./theme.tsx";
+import { usePhoneLabels, usePhoneNumberFormatter } from "./locale.tsx";
 import { animateNextLayout, usePhoneMotion } from "./motion.tsx";
 import {
   PhoneText,
@@ -52,15 +60,13 @@ export type PhoneIslandPlacement =
 /** Expand the phone, show a heads-up banner, or leave opening to the user. */
 export type IncomingCallBehavior = "expand" | "notify" | "manual";
 export type PhoneIslandChangeReason =
-  | "user"
-  | "incoming"
-  | "outgoing"
-  | "answered"
-  | "ended";
+  "user" | "incoming" | "outgoing" | "answered" | "ended";
 
 /** Docked presentation of one provider's phone. Collapsing never disconnects it. */
-export interface PhoneIslandProps
-  extends Omit<PhoneWidgetProps, "draggable" | "variant" | "onMinimize" | "insets"> {
+export interface PhoneIslandProps extends Omit<
+  PhoneWidgetProps,
+  "draggable" | "variant" | "onMinimize" | "insets"
+> {
   /** `window` adds safe-area insets; `container` docks inside its parent. Both overlay absolutely. */
   scope?: "window" | "container";
   /** Defaults to top-center, where the system call indicator lives on phones. */
@@ -80,7 +86,10 @@ export interface PhoneIslandProps
   defaultExpanded?: boolean;
   /** Controlled mode: the host must update this value in onExpandedChange. */
   expanded?: boolean;
-  onExpandedChange?: (expanded: boolean, reason: PhoneIslandChangeReason) => void;
+  onExpandedChange?: (
+    expanded: boolean,
+    reason: PhoneIslandChangeReason,
+  ) => void;
   /** Dim the app behind the expanded island; tapping it collapses. Defaults to true. */
   backdrop?: boolean;
   /** `contrast` (default) is a dark capsule like the system island; `surface` follows the theme. */
@@ -94,7 +103,12 @@ function IslandBars({ color }: { color: string }): ReactElement {
   return (
     <View
       importantForAccessibility="no-hide-descendants"
-      style={{ flexDirection: "row", alignItems: "center", gap: 2.5, height: 18 }}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 2.5,
+        height: 18,
+      }}
     >
       {activity.bands.map((band, i) => (
         <View
@@ -116,6 +130,8 @@ function IslandBars({ color }: { color: string }): ReactElement {
 export function PhoneIsland({
   theme,
   motion,
+  labels,
+  formatNumber,
   style,
   testID,
   ...props
@@ -124,10 +140,28 @@ export function PhoneIsland({
     <PhoneRoot
       theme={theme}
       motion={motion}
+      labels={labels}
+      formatNumber={formatNumber}
       testID={testID}
-      style={[{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: props.zIndex ?? 50 }, style]}
+      style={[
+        {
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: props.zIndex ?? 50,
+        },
+        style,
+      ]}
     >
-      <IslandBody {...props} theme={theme} motion={motion} />
+      <IslandBody
+        {...props}
+        theme={theme}
+        motion={motion}
+        labels={labels}
+        formatNumber={formatNumber}
+      />
     </PhoneRoot>
   );
 }
@@ -148,17 +182,22 @@ function IslandBody({
   backdrop = true,
   tone = "contrast",
   expandedWidth = 420,
-  title = "Your phone",
+  title,
   theme: themeTokens,
   motion: motionSetting,
   ...widget
 }: Omit<PhoneIslandProps, "style" | "testID">): ReactElement {
-  const { state, client } = usePhone();
+  const { state, client, preview } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
+  const format = usePhoneNumberFormatter();
   const motion = usePhoneMotion();
   const window = useWindowDimensions();
   // Dock within the measured overlay so container scope never sizes from the window.
-  const [measured, setMeasured] = useState<{ width: number; height: number } | null>(null);
+  const [measured, setMeasured] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const area = measured ?? window;
   const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
   const expanded = controlled ?? localExpanded;
@@ -179,13 +218,23 @@ function IslandBody({
   useEffect(() => {
     const before = previous.current;
     const id = state.call?.id ?? "";
-    if (before.client === client && before.status === state.status && before.id === id) return;
+    if (
+      before.client === client &&
+      before.status === state.status &&
+      before.id === id
+    )
+      return;
     previous.current = { client, status: state.status, id };
     clearTimeout(timer.current);
     if (state.status === "incoming") {
       if (announceIncoming) {
-        const who = state.call?.caller.name ?? state.call?.caller.number ?? "unknown caller";
-        AccessibilityInfo.announceForAccessibility?.(`Incoming call from ${who}`);
+        const who =
+          state.call?.caller.name ??
+          state.call?.caller.number ??
+          labels.unknownCaller;
+        AccessibilityInfo.announceForAccessibility?.(
+          labels.incomingCallFrom(who),
+        );
       }
       if (incomingBehavior === "expand") latestChange.current(true, "incoming");
     } else if (
@@ -228,10 +277,13 @@ function IslandBody({
   // Android back collapses the island before navigating.
   useEffect(() => {
     if (!expanded) return;
-    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      latestChange.current(false, "user");
-      return true;
-    });
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        latestChange.current(false, "user");
+        return true;
+      },
+    );
     return () => subscription.remove();
   }, [expanded]);
 
@@ -256,7 +308,8 @@ function IslandBody({
   latestPlacement.current = { top, expanded };
   const swipe = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
       onPanResponderRelease: (_, g) => {
         const { top: atTop, expanded: open } = latestPlacement.current;
         const towardContent = atTop ? g.dy > 28 : g.dy < -28;
@@ -271,35 +324,41 @@ function IslandBody({
   const active = state.status === "active" || state.status === "held";
   const busy = !["idle", "ended"].includes(state.status);
   const rawCaller = state.call?.caller;
-  const caller = rawCaller && widget.resolveCaller ? widget.resolveCaller(rawCaller) : rawCaller;
+  const caller =
+    rawCaller && widget.resolveCaller
+      ? widget.resolveCaller(rawCaller)
+      : rawCaller;
+  const heading = title ?? labels.title;
   const label = incoming
-    ? "Incoming call"
+    ? labels.incomingCall
     : state.status === "held" || state.remoteHeld
-      ? "On hold"
+      ? labels.onHold
       : state.status === "active"
-        ? "In conversation"
+        ? labels.inConversation
         : state.status === "answering"
-          ? "Connecting call"
+          ? labels.connectingCall
           : busy
-            ? "Calling"
+            ? labels.callingShort
             : state.error
-              ? "Phone needs attention"
+              ? labels.needsAttention
               : state.playbackBlocked
-                ? "Enable call audio"
-                : title;
+                ? labels.enableCallAudio
+                : heading;
   const connectionLabel = {
-    disconnected: "Not connected",
-    connecting: "Connecting…",
-    registered: "Ready for calls",
-    reconnecting: "Reconnecting…",
-    error: "Connection failed",
+    disconnected: labels.notConnected,
+    connecting: labels.connecting,
+    registered: preview ? labels.previewMode : labels.readyForCalls,
+    reconnecting: labels.reconnecting,
+    error: labels.connectionFailed,
   }[state.connection];
+  const who =
+    caller?.name ?? (caller?.number ? format(caller.number) : undefined);
   const secondary = incoming
     ? caller?.name
-      ? caller.number
-      : "Tap to answer"
+      ? format(caller.number)
+      : labels.tapToAnswer
     : busy
-      ? [caller?.name ?? caller?.number, state.muted ? "Muted" : null].filter(Boolean).join(" · ")
+      ? [who, state.muted ? labels.muted : null].filter(Boolean).join(" · ")
       : connectionLabel;
 
   const inset = (value: number | undefined) =>
@@ -317,21 +376,46 @@ function IslandBody({
     ),
   );
   const contrast = tone === "contrast";
-  const pillBg = contrast ? (theme.appearance === "dark" ? "#000000" : "#101412") : theme.background;
-  const pillFg = contrast ? "#f4f7f2" : theme.foreground;
-  const pillMuted = contrast ? "rgba(244,247,242,0.62)" : theme.muted;
+  const pillBg = contrast ? theme.islandBackground : theme.background;
+  const pillFg = contrast ? theme.islandForeground : theme.foreground;
+  const pillMuted = contrast
+    ? withAlpha(theme.islandForeground, 0.62)
+    : theme.muted;
   // A dark accent disappears on the dark capsule; lift it toward white for contrast.
   const glow =
-    contrast && theme.appearance === "light"
+    contrast &&
+    readableColor(theme.islandBackground) === "#ffffff" &&
+    readableColor(theme.accent) === "#ffffff"
       ? mixColors(theme.accent, "#ffffff", 0.38)
       : theme.accent;
+  const onGlow = readableColor(glow);
+  // A custom answer colour wins; otherwise the lifted accent reads on the capsule.
+  const answerColor =
+    contrast && theme.answer === theme.accent ? glow : theme.answer;
   const maxPanel =
     area.height - oy * 2 - (safe.top ?? 0) - (safe.bottom ?? 0) - 64;
-  const align = placement.endsWith("left") ? "flex-start" : placement.endsWith("right") ? "flex-end" : "center";
+  const align = placement.endsWith("left")
+    ? "flex-start"
+    : placement.endsWith("right")
+      ? "flex-end"
+      : "center";
 
   const mark = (
-    <View style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}>
-      <PulseRings size={32} color={glow} active={incoming} rings={2} spread={1.6} />
+    <View
+      style={{
+        width: 32,
+        height: 32,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <PulseRings
+        size={32}
+        color={glow}
+        active={incoming}
+        rings={2}
+        spread={1.6}
+      />
       <View
         style={{
           width: 32,
@@ -339,15 +423,19 @@ function IslandBody({
           borderRadius: 16,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: state.error ? theme.danger : busy ? glow : withAlpha(pillFg, 0.12),
+          backgroundColor: state.error
+            ? theme.danger
+            : busy
+              ? glow
+              : withAlpha(pillFg, 0.12),
         }}
       >
         {state.error && !busy ? (
           <CircleAlert size={17} color={theme.dangerForeground} />
         ) : incoming ? (
-          <PhoneIncoming size={16} color={contrast ? "#0d1510" : theme.accentForeground} />
+          <PhoneIncoming size={16} color={onGlow} />
         ) : busy ? (
-          <Phone size={15} color={contrast ? "#0d1510" : theme.accentForeground} fill={contrast ? "#0d1510" : theme.accentForeground} />
+          <Phone size={15} color={onGlow} fill={onGlow} />
         ) : (
           <AudioLines size={17} color={pillFg} />
         )}
@@ -360,7 +448,13 @@ function IslandBody({
       <Pressable
         onPress={() => change(!expanded, "user")}
         accessibilityRole="button"
-        accessibilityLabel={expanded ? "Collapse phone" : busy ? "Open call" : "Open phone"}
+        accessibilityLabel={
+          expanded
+            ? labels.collapsePhone
+            : busy
+              ? labels.openCall
+              : labels.openPhone
+        }
         accessibilityHint={expanded ? undefined : `${label}. ${secondary}`}
         {...accessibilityStateProps("button", { expanded })}
         testID="island-trigger"
@@ -376,11 +470,20 @@ function IslandBody({
       >
         {mark}
         <View style={{ flex: 1, minWidth: 0 }}>
-          <PhoneText size={14} weight="600" color={expanded ? theme.foreground : pillFg} numberOfLines={1}>
+          <PhoneText
+            size={14}
+            weight="600"
+            color={expanded ? theme.foreground : pillFg}
+            numberOfLines={1}
+          >
             {label}
           </PhoneText>
           {secondary ? (
-            <PhoneText size={12} color={expanded ? theme.muted : pillMuted} numberOfLines={1}>
+            <PhoneText
+              size={12}
+              color={expanded ? theme.muted : pillMuted}
+              numberOfLines={1}
+            >
               {secondary}
             </PhoneText>
           ) : null}
@@ -391,7 +494,11 @@ function IslandBody({
             <IslandBars color={glow} />
           </View>
         ) : expanded ? (
-          top ? <ChevronUp size={18} color={theme.muted} /> : <ChevronDown size={18} color={theme.muted} />
+          top ? (
+            <ChevronUp size={18} color={theme.muted} />
+          ) : (
+            <ChevronDown size={18} color={theme.muted} />
+          )
         ) : !busy ? (
           <View
             style={{
@@ -399,7 +506,11 @@ function IslandBody({
               height: 8,
               borderRadius: 4,
               backgroundColor:
-                state.connection === "registered" ? glow : state.connection === "error" ? theme.danger : pillMuted,
+                state.connection === "registered"
+                  ? glow
+                  : state.connection === "error"
+                    ? theme.danger
+                    : pillMuted,
             }}
           />
         ) : null}
@@ -408,16 +519,37 @@ function IslandBody({
   );
 
   const banner = notify ? (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingBottom: 12 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        paddingHorizontal: 12,
+        paddingBottom: 12,
+      }}
+    >
       <Avatar caller={caller} size={40} />
-      <PhoneText size={16} weight="600" color={pillFg} numberOfLines={1} style={{ flex: 1 }}>
-        {caller?.name ?? caller?.number ?? "Unknown caller"}
+      <PhoneText
+        size={16}
+        weight="600"
+        color={pillFg}
+        numberOfLines={1}
+        style={{ flex: 1 }}
+      >
+        {who ?? labels.unknownCaller}
       </PhoneText>
       <PressableScale
         onPress={() => client.hangup()}
-        accessibilityLabel="Decline"
+        accessibilityLabel={labels.decline}
         scaleTo={0.88}
-        style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: theme.danger, alignItems: "center", justifyContent: "center" }}
+        style={{
+          width: 46,
+          height: 46,
+          borderRadius: controlRadius(theme, 46),
+          backgroundColor: theme.danger,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <PhoneOff size={20} color={theme.dangerForeground} />
       </PressableScale>
@@ -426,11 +558,22 @@ function IslandBody({
           change(true, "user");
           action(() => client.answer());
         }}
-        accessibilityLabel="Answer"
+        accessibilityLabel={labels.answer}
         scaleTo={0.88}
-        style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: glow, alignItems: "center", justifyContent: "center" }}
+        style={{
+          width: 46,
+          height: 46,
+          borderRadius: controlRadius(theme, 46),
+          backgroundColor: answerColor,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
-        <Phone size={20} color="#0d1510" fill="#0d1510" />
+        <Phone
+          size={20}
+          color={readableColor(answerColor)}
+          fill={readableColor(answerColor)}
+        />
       </PressableScale>
     </View>
   ) : null;
@@ -481,32 +624,53 @@ function IslandBody({
       >
         <Animated.View
           testID="island-shell"
-          onAccessibilityEscape={expanded ? () => change(false, "user") : undefined}
+          onAccessibilityEscape={
+            expanded ? () => change(false, "user") : undefined
+          }
           style={{
             width,
             borderRadius: radius,
             overflow: "hidden",
             backgroundColor: pillBg,
-            borderWidth: contrast && theme.appearance === "dark" ? 1 : tone === "surface" ? 1 : 0,
+            borderWidth:
+              contrast && theme.appearance === "dark"
+                ? 1
+                : tone === "surface"
+                  ? 1
+                  : 0,
             borderColor: contrast ? "rgba(255,255,255,0.08)" : theme.border,
-            boxShadow: "0 14px 38px -12px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.12)",
+            boxShadow:
+              "0 14px 38px -12px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.12)",
             transform: [
               {
-                scale: reveal.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.985, 1] }),
+                scale: reveal.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [1, 0.985, 1],
+                }),
               },
             ],
           }}
         >
           <Animated.View
             pointerEvents="none"
-            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: theme.background, opacity: reveal }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: theme.background,
+              opacity: reveal,
+            }}
           />
           {top ? bar : null}
           {banner}
           {/* Stay mounted: auto-dial consumption, dial input, and the SIP session survive collapse. */}
           <Animated.View
             style={{ display: expanded ? "flex" : "none", opacity: reveal }}
-            importantForAccessibility={expanded ? "auto" : "no-hide-descendants"}
+            importantForAccessibility={
+              expanded ? "auto" : "no-hide-descendants"
+            }
           >
             <ScrollView
               style={{ maxHeight: Math.max(240, maxPanel) }}
@@ -516,7 +680,7 @@ function IslandBody({
             >
               <PhoneWidget
                 {...widget}
-                title={title}
+                title={heading}
                 theme={themeTokens}
                 motion={motionSetting}
                 variant="sheet"
@@ -532,8 +696,7 @@ function IslandBody({
 }
 
 export interface SipPhoneIslandProps
-  extends Omit<PhoneProviderProps, "children">,
-    PhoneIslandProps {}
+  extends Omit<PhoneProviderProps, "children">, PhoneIslandProps {}
 
 /** All-in-one island. Use PhoneIsland inside an existing PhoneProvider to share a line. */
 export function SipPhoneIsland({

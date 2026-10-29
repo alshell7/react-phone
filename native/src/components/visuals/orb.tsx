@@ -15,6 +15,7 @@ import Svg, {
 } from "react-native-svg";
 import { usePhoneMotion } from "../motion.tsx";
 import { mixColors, usePhoneTheme } from "../theme.tsx";
+import { usePhoneLabels } from "../locale.tsx";
 
 export interface OrbProps {
   /** Base and highlight colours. Defaults follow the theme accent. */
@@ -83,6 +84,7 @@ export function Orb({
   testID,
 }: OrbProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const mode = appearance ?? theme.appearance;
   const [base, light] = useMemo<[string, string]>(() => {
@@ -133,12 +135,7 @@ export function Orb({
       inputRange: [0, 1],
       outputRange: [`${offset}deg`, `${offset + 360 * direction}deg`],
     });
-  const blob = (
-    gradient: string,
-    index: number,
-    rx: number,
-    ry: number,
-  ) => (
+  const blob = (gradient: string, index: number, rx: number, ry: number) => (
     <Svg width={size} height={size} viewBox="0 0 100 100">
       <Ellipse
         cx={50 + layout[index].dx * 100}
@@ -155,7 +152,7 @@ export function Orb({
       testID={testID}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={`Voice orb: ${state}`}
+      accessibilityLabel={labels.voiceOrb(state)}
       style={[{ width: size, height: size }, style]}
     >
       <Animated.View

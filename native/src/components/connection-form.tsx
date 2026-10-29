@@ -11,6 +11,7 @@ import {
 import { usePhone } from "../react/phone-provider.tsx";
 import type { SipConfig } from "../core/types.ts";
 import { usePhoneTheme } from "./theme.tsx";
+import { usePhoneLabels } from "./locale.tsx";
 import {
   Button,
   Field,
@@ -33,7 +34,10 @@ export function ConnectionForm({
 }: ConnectionFormProps): ReactElement {
   const { state, client } = usePhone();
   const theme = usePhoneTheme();
-  const [username, setUsername] = useState(defaultValues.authorizationUsername ?? "");
+  const labels = usePhoneLabels();
+  const [username, setUsername] = useState(
+    defaultValues.authorizationUsername ?? "",
+  );
   const [password, setPassword] = useState("");
   const [reveal, setReveal] = useState(false);
   const [uri, setUri] = useState(defaultValues.uri ?? "");
@@ -41,11 +45,16 @@ export function ConnectionForm({
   const [iceUrl, setIceUrl] = useState("");
   const [turnUsername, setTurnUsername] = useState("");
   const [turnPassword, setTurnPassword] = useState("");
-  const [advanced, setAdvanced] = useState(!defaultValues.uri || !defaultValues.websocketUrl);
+  const [advanced, setAdvanced] = useState(
+    !defaultValues.uri || !defaultValues.websocketUrl,
+  );
   const pending = ["connecting", "reconnecting"].includes(state.connection);
   // Account problems belong next to the fields that fix them.
   const accountError =
-    state.error && ["configuration", "connection", "registration", "unsupported"].includes(state.error.code)
+    state.error &&
+    ["configuration", "connection", "registration", "unsupported"].includes(
+      state.error.code,
+    )
       ? state.error.message
       : null;
   const text = {
@@ -66,7 +75,9 @@ export function ConnectionForm({
           ? [
               {
                 urls: iceUrl.trim(),
-                ...(turnUsername ? { username: turnUsername, credential: turnPassword } : {}),
+                ...(turnUsername
+                  ? { username: turnUsername, credential: turnPassword }
+                  : {}),
               },
             ]
           : defaultValues.iceServers,
@@ -81,20 +92,20 @@ export function ConnectionForm({
     <View style={{ gap: 14, alignSelf: "stretch" }}>
       <Field
         {...text}
-        label="Username"
+        label={labels.username}
         value={username}
         onChangeText={setUsername}
-        placeholder="Your SIP username"
+        placeholder={labels.usernamePlaceholder}
         autoComplete="username"
         textContentType="username"
         testID="sip-username"
       />
       <Field
         {...text}
-        label="Password"
+        label={labels.password}
         value={password}
         onChangeText={setPassword}
-        placeholder="Enter your SIP password"
+        placeholder={labels.passwordPlaceholder}
         secureTextEntry={!reveal}
         autoComplete="password"
         textContentType="password"
@@ -104,20 +115,27 @@ export function ConnectionForm({
         trailing={
           <IconButton
             icon={reveal ? EyeOff : Eye}
-            accessibilityLabel={reveal ? "Hide password" : "Show password"}
+            accessibilityLabel={
+              reveal ? labels.hidePassword : labels.showPassword
+            }
             onPress={() => setReveal(!reveal)}
           />
         }
       />
       <PressableScale
         onPress={() => setAdvanced(!advanced)}
-        accessibilityLabel="Server and network settings"
+        accessibilityLabel={labels.serverSettings}
         accessibilityState={{ expanded: advanced }}
         scaleTo={0.98}
-        style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: 40 }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          minHeight: 40,
+        }}
       >
         <PhoneText size={14} weight="600" color={theme.accent}>
-          Server & network settings
+          {labels.serverSettings}
         </PhoneText>
         {advanced ? (
           <ChevronUp size={16} color={theme.accent} />
@@ -129,17 +147,17 @@ export function ConnectionForm({
         <View style={{ gap: 14 }}>
           <Field
             {...text}
-            label="SIP address"
+            label={labels.sipAddress}
             value={uri}
             onChangeText={setUri}
             placeholder="sip:1001@pbx.example.com"
             keyboardType="email-address"
-            hint="The extension in this address can differ from your username."
+            hint={labels.sipAddressHint}
             testID="sip-uri"
           />
           <Field
             {...text}
-            label="WebSocket server"
+            label={labels.websocketServer}
             value={server}
             onChangeText={setServer}
             placeholder="wss://pbx.example.com/ws"
@@ -148,7 +166,7 @@ export function ConnectionForm({
           />
           <Field
             {...text}
-            label="STUN / TURN server (optional)"
+            label={labels.iceServer}
             value={iceUrl}
             onChangeText={setIceUrl}
             placeholder="turn:relay.example.com:3478"
@@ -156,10 +174,15 @@ export function ConnectionForm({
           />
           {iceUrl.startsWith("turn") ? (
             <>
-              <Field {...text} label="TURN username" value={turnUsername} onChangeText={setTurnUsername} />
               <Field
                 {...text}
-                label="TURN password"
+                label={labels.turnUsername}
+                value={turnUsername}
+                onChangeText={setTurnUsername}
+              />
+              <Field
+                {...text}
+                label={labels.turnPassword}
                 value={turnPassword}
                 onChangeText={setTurnPassword}
                 secureTextEntry
@@ -175,25 +198,40 @@ export function ConnectionForm({
           color={theme.danger}
           accessibilityRole="alert"
           accessibilityLiveRegion="assertive"
-          style={{ padding: 12, borderRadius: 12, backgroundColor: theme.dangerSoft }}
+          style={{
+            padding: 12,
+            borderRadius: 12,
+            backgroundColor: theme.dangerSoft,
+          }}
         >
           {accountError}
         </PhoneText>
       ) : null}
       <Button
-        label={pending ? "Connecting…" : "Connect account"}
+        label={pending ? labels.connectingAccount : labels.connectAccount}
         icon={Phone}
         disabled={pending}
         onPress={submit}
         testID="sip-connect"
       />
       {pending ? (
-        <Button label="Cancel connection" tone="secondary" onPress={() => client.disconnect()} />
+        <Button
+          label={labels.cancelConnection}
+          tone="secondary"
+          onPress={() => client.disconnect()}
+        />
       ) : null}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          justifyContent: "center",
+        }}
+      >
         <ShieldCheck size={14} color={theme.muted} />
         <PhoneText size={12} color={theme.muted}>
-          Credentials stay in memory for this session.
+          {labels.credentialsNote}
         </PhoneText>
       </View>
     </View>

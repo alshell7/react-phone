@@ -4,6 +4,7 @@ import type { ReactElement } from "../../react-types.d.ts";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import { usePhoneMotion } from "../motion.ts";
 import { usePhoneTheme } from "../theme.ts";
+import { usePhoneLabels } from "../locale.ts";
 import { jsx as _jsx } from "react/jsx-runtime";
 export interface LiveWaveformProps {
   /** Read live levels from `getLevel` / `level`. */
@@ -61,10 +62,11 @@ export function LiveWaveform({
   historySize = 60,
   updateRate = 50,
   style,
-  accessibilityLabel = "Call audio waveform",
+  accessibilityLabel,
   testID
 }: LiveWaveformProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const moving = animate && motion.enabled;
   const barWidth = Math.max(1, Number.isFinite(requestedWidth) ? requestedWidth : 3);
@@ -120,7 +122,7 @@ export function LiveWaveform({
     testID: testID,
     accessible: true,
     accessibilityRole: "image",
-    accessibilityLabel: accessibilityLabel,
+    accessibilityLabel: accessibilityLabel ?? labels.callAudioWaveform,
     onLayout: event => setWidth(event.nativeEvent.layout.width),
     style: [{
       height,

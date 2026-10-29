@@ -9,14 +9,24 @@ import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 
 const root = new URL("../", import.meta.url);
 const stage = new URL(".jsr-stage/", root);
-const manifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
+const manifest = JSON.parse(
+  await readFile(new URL("package.json", root), "utf8"),
+);
 const jsr = JSON.parse(await readFile(new URL("jsr.json", root), "utf8"));
 if (manifest.version !== jsr.version)
-  throw new Error(`package.json (${manifest.version}) and jsr.json (${jsr.version}) versions differ.`);
+  throw new Error(
+    `package.json (${manifest.version}) and jsr.json (${jsr.version}) versions differ.`,
+  );
 
 await rm(stage, { recursive: true, force: true });
 await mkdir(stage, { recursive: true });
-for (const file of ["publish", "README.md", "CHANGELOG.md", "LICENSE", "jsr.json"])
+for (const file of [
+  "publish",
+  "README.md",
+  "CHANGELOG.md",
+  "LICENSE",
+  "jsr.json",
+])
   await cp(new URL(file, root), new URL(file, stage), { recursive: true });
 await writeFile(
   new URL("package.json", stage),

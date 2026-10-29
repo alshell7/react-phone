@@ -46,6 +46,7 @@ export default defineConfig({
             { label: "Quick start", slug: "native/quick-start" },
             { label: "Phone surfaces", slug: "native/surfaces" },
             { label: "Dynamic island", slug: "native/dynamic-island" },
+            { label: "Contacts & speed dial", slug: "native/contacts" },
             { label: "Calling & lifecycle", slug: "native/calling" },
             { label: "Audio, tones & haptics", slug: "native/audio" },
             { label: "Orb, waveforms & bars", slug: "native/visuals" },

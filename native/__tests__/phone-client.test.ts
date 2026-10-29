@@ -18,7 +18,11 @@ let clients: PhoneClient[];
 let media: ReturnType<typeof createMedia>;
 
 function make(options: PhoneClientOptions = {}): PhoneClient {
-  const client = new PhoneClient({ media: media.media, haptics: silent, ...options });
+  const client = new PhoneClient({
+    media: media.media,
+    haptics: silent,
+    ...options,
+  });
   clients.push(client);
   return client;
 }
@@ -78,9 +82,13 @@ describe("PhoneClient lifecycle", () => {
       client.hangup();
       expect(ring).toHaveBeenCalledWith("outgoing");
       expect(ring).toHaveBeenCalledWith("ringing");
-      expect(cue.mock.calls.filter(([event]) => event === "connected")).toHaveLength(1);
+      expect(
+        cue.mock.calls.filter(([event]) => event === "connected"),
+      ).toHaveLength(1);
       expect(cue).toHaveBeenCalledWith("dtmf", "5");
-      expect(cue.mock.calls.filter(([event]) => event === "disconnected")).toHaveLength(2);
+      expect(
+        cue.mock.calls.filter(([event]) => event === "disconnected"),
+      ).toHaveLength(2);
     } finally {
       cue.mockRestore();
       ring.mockRestore();
@@ -162,7 +170,9 @@ describe("PhoneClient lifecycle", () => {
     const onEvent = jest.fn();
     const client = make({ onEvent });
     const promise = client.connect(config);
-    const rejection = expect(promise).rejects.toThrow("Registration was rejected");
+    const rejection = expect(promise).rejects.toThrow(
+      "Registration was rejected",
+    );
     ua().emit("registrationFailed", {
       response: { status_code: 403, body: config.password },
     });
@@ -265,7 +275,9 @@ describe("PhoneClient lifecycle", () => {
   it("maps a permanently blocked permission to Settings guidance without capturing", async () => {
     const client = make();
     await registered(client);
-    media.media.requestMicrophonePermission = jest.fn(async () => "blocked" as const);
+    media.media.requestMicrophonePermission = jest.fn(
+      async () => "blocked" as const,
+    );
     await expect(client.call("7003")).rejects.toThrow("turned off");
     expect(client.getSnapshot().microphone).toBe("blocked");
     expect(client.getSnapshot().error?.message).toContain("Open Settings");
@@ -279,7 +291,9 @@ describe("PhoneClient lifecycle", () => {
     media = createMedia({ platform: "android" });
     const client = make();
     await registered(client);
-    media.media.requestMicrophonePermission = jest.fn(async () => "denied" as const);
+    media.media.requestMicrophonePermission = jest.fn(
+      async () => "denied" as const,
+    );
     await expect(client.call("7003")).rejects.toThrow("Permissions");
     expect(client.getSnapshot().microphone).toBe("denied");
   });
@@ -320,7 +334,10 @@ describe("PhoneClient lifecycle", () => {
       reason_phrase: "Busy Here",
     });
     expect(client.getSnapshot().call?.id).toBe(id);
-    expect(client.getSnapshot().call?.caller).toEqual({ number: "7003", name: "Alex" });
+    expect(client.getSnapshot().call?.caller).toEqual({
+      number: "7003",
+      name: "Alex",
+    });
   });
 
   it("declines an unanswered incoming call with 486 and ends an established call with BYE", async () => {
@@ -330,7 +347,10 @@ describe("PhoneClient lifecycle", () => {
     incoming.direction = "incoming";
     ua().emit("newRTCSession", { session: incoming });
     client.hangup();
-    expect(incoming.terminate).toHaveBeenCalledWith({ status_code: 486, reason_phrase: "Busy Here" });
+    expect(incoming.terminate).toHaveBeenCalledWith({
+      status_code: 486,
+      reason_phrase: "Busy Here",
+    });
     expect(client.getSnapshot().call?.endReason).toBe("Declined");
     await client.call("7003");
     const outgoing = ua().call.mock.results[0].value as Session;
@@ -423,7 +443,10 @@ describe("PhoneClient lifecycle", () => {
     client.setVolume(NaN);
     expect(client.getSnapshot().volume).toBe(0);
     const native = createMedia({ defaultVolume: 1 } as never);
-    expect(new PhoneClient({ media: native.media, haptics: silent }).getSnapshot().volume).toBe(1);
+    expect(
+      new PhoneClient({ media: native.media, haptics: silent }).getSnapshot()
+        .volume,
+    ).toBe(1);
   });
 
   it("plays remote tracks through the platform player", async () => {
@@ -431,7 +454,10 @@ describe("PhoneClient lifecycle", () => {
     const session = await connectedCall(client);
     const remote = new Stream();
     session.connection!.dispatchEvent(
-      Object.assign(new Event("track"), { track: remote.tracks[0], streams: [remote] }),
+      Object.assign(new Event("track"), {
+        track: remote.tracks[0],
+        streams: [remote],
+      }),
     );
     await flush();
     expect(client.getSnapshot().remoteStream).toBe(remote);
@@ -469,7 +495,11 @@ describe("PhoneClient lifecycle", () => {
     client.setMuted(true);
     client.setHeld(true);
     client.setSpeaker(true);
-    expect(client.getSnapshot()).toMatchObject({ status: "held", muted: true, speaker: true });
+    expect(client.getSnapshot()).toMatchObject({
+      status: "held",
+      muted: true,
+      speaker: true,
+    });
     client.hangup();
     expect(client.getSnapshot().speaker).toBe(false);
     expect(uas).toHaveLength(0);
@@ -494,10 +524,14 @@ describe("native platform behaviour", () => {
     const client = make();
     const session = await connectedCall(client);
     client.sendDTMF("5");
-    expect(session.sendDTMF).toHaveBeenLastCalledWith("5", { transportType: "INFO" });
+    expect(session.sendDTMF).toHaveBeenLastCalledWith("5", {
+      transportType: "INFO",
+    });
     session.connection!.senders[0].dtmf = { insertDTMF: jest.fn() };
     client.sendDTMF("#");
-    expect(session.sendDTMF).toHaveBeenLastCalledWith("#", { transportType: "RFC2833" });
+    expect(session.sendDTMF).toHaveBeenLastCalledWith("#", {
+      transportType: "RFC2833",
+    });
     expect(() => client.sendDTMF("55")).toThrow("single keypad digit");
   });
 
@@ -511,11 +545,17 @@ describe("native platform behaviour", () => {
     session.emit("accepted");
     session.connection!.senders[0].dtmf = {};
     client.sendDTMF("1");
-    expect(session.sendDTMF).toHaveBeenLastCalledWith("1", { transportType: "INFO" });
+    expect(session.sendDTMF).toHaveBeenLastCalledWith("1", {
+      transportType: "INFO",
+    });
   });
 
   it("drives the audio session through ringing, call, speaker, and teardown", async () => {
-    const audioSession = { start: jest.fn(), stop: jest.fn(), setSpeaker: jest.fn() };
+    const audioSession = {
+      start: jest.fn(),
+      stop: jest.fn(),
+      setSpeaker: jest.fn(),
+    };
     const onEvent = jest.fn();
     const client = make({ audioSession, onEvent });
     expect(client.capabilities.speaker).toBe(true);
@@ -531,7 +571,9 @@ describe("native platform behaviour", () => {
     client.setSpeaker(true);
     expect(audioSession.setSpeaker).toHaveBeenCalledWith(true);
     expect(client.getSnapshot().speaker).toBe(true);
-    expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ type: "speaker", value: true }));
+    expect(onEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "speaker", value: true }),
+    );
     client.hangup();
     expect(audioSession.stop).toHaveBeenCalledTimes(1);
     expect(client.getSnapshot().speaker).toBe(false);
@@ -573,9 +615,23 @@ describe("native platform behaviour", () => {
     expect(levels.output).toBeCloseTo(0.75, 1);
     expect(levels.input).toBe(0);
     // Energy deltas take precedence when available (RMS of the interval).
-    peer.stats = [{ type: "inbound-rtp", kind: "audio", totalAudioEnergy: 0, totalSamplesDuration: 1 }];
+    peer.stats = [
+      {
+        type: "inbound-rtp",
+        kind: "audio",
+        totalAudioEnergy: 0,
+        totalSamplesDuration: 1,
+      },
+    ];
     await client.getAudioLevels();
-    peer.stats = [{ type: "inbound-rtp", kind: "audio", totalAudioEnergy: 0.0001, totalSamplesDuration: 1.1 }];
+    peer.stats = [
+      {
+        type: "inbound-rtp",
+        kind: "audio",
+        totalAudioEnergy: 0.0001,
+        totalSamplesDuration: 1.1,
+      },
+    ];
     // RMS sqrt(0.0001 / 0.1) ≈ 0.0316 is −30 dBFS, the midpoint of the −50…−10 dB range.
     expect((await client.getAudioLevels()).output).toBeCloseTo(0.5, 2);
     client.setMuted(true);
@@ -598,12 +654,17 @@ describe("native platform behaviour", () => {
 
   it("keeps a bounded history of completed calls", async () => {
     jest.useFakeTimers();
-    const client = make({ preview: { enabled: true, answerDelayMs: 1 }, historyLimit: 2 });
+    const client = make({
+      preview: { enabled: true, answerDelayMs: 1 },
+      historyLimit: 2,
+    });
     for (const number of ["7001", "7002", "7003"]) {
       await client.call(number);
       client.hangup();
     }
-    expect(client.getSnapshot().history.map((call) => call.caller.number)).toEqual(["7003", "7002"]);
+    expect(
+      client.getSnapshot().history.map((call) => call.caller.number),
+    ).toEqual(["7003", "7002"]);
     client.clearHistory();
     expect(client.getSnapshot().history).toHaveLength(0);
   });
@@ -617,25 +678,28 @@ describe("end reasons", () => {
     ["outgoing", "Not Found", "Number not found", true],
     ["incoming", "Canceled", "Missed call", false],
     ["outgoing", "Something New", "Call ended", true],
-  ])("maps a %s call ending with %p to %p", async (direction, cause, reason, errors) => {
-    const client = make();
-    await registered(client);
-    let session: Session;
-    if (direction === "incoming") {
-      session = new Session();
-      session.direction = "incoming";
-      ua().emit("newRTCSession", { session });
-    } else {
-      await client.call("7003");
-      session = ua().call.mock.results[0].value as Session;
-    }
-    // A BYE only arrives after the call was answered.
-    if (cause === "BYE") session.emit("accepted");
-    session.emit(cause === "BYE" ? "ended" : "failed", { cause });
-    expect(client.getSnapshot().call?.endReason).toBe(reason);
-    expect(Boolean(client.getSnapshot().error)).toBe(errors);
-    if (errors) expect(client.getSnapshot().error?.message).toContain(reason);
-  });
+  ])(
+    "maps a %s call ending with %p to %p",
+    async (direction, cause, reason, errors) => {
+      const client = make();
+      await registered(client);
+      let session: Session;
+      if (direction === "incoming") {
+        session = new Session();
+        session.direction = "incoming";
+        ua().emit("newRTCSession", { session });
+      } else {
+        await client.call("7003");
+        session = ua().call.mock.results[0].value as Session;
+      }
+      // A BYE only arrives after the call was answered.
+      if (cause === "BYE") session.emit("accepted");
+      session.emit(cause === "BYE" ? "ended" : "failed", { cause });
+      expect(client.getSnapshot().call?.endReason).toBe(reason);
+      expect(Boolean(client.getSnapshot().error)).toBe(errors);
+      if (errors) expect(client.getSnapshot().error?.message).toContain(reason);
+    },
+  );
 });
 
 describe("hold negotiation", () => {
@@ -668,7 +732,9 @@ describe("hold negotiation", () => {
     client.setHeld(true);
     await jest.advanceTimersByTimeAsync(6500);
     expect(client.getSnapshot().status).toBe("active");
-    expect(client.getSnapshot().error?.message).toContain("Hold is temporarily unavailable");
+    expect(client.getSnapshot().error?.message).toContain(
+      "Hold is temporarily unavailable",
+    );
   });
 
   it("stops retrying when the call ends", async () => {

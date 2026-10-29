@@ -39,6 +39,8 @@ export function PhoneScreen({ config }: { config: SipConfig }) {
 | ---------------------------------------------------- | --------------------------------------- | ------------------------------------------------------- |
 | A dedicated phone screen or tab                      | `SipPhone variant="screen"`             | [Phone surfaces](/react-phone/native/surfaces/)         |
 | A phone that floats over every screen                | `SipPhoneIsland`                        | [Dynamic island](/react-phone/native/dynamic-island/)   |
+| Contact suggestions, speed dial, your own call buttons | `contacts`, `speedDial`, `extraControls` | [Contacts & speed dial](/react-phone/native/contacts/) |
+| Your brand, your language                            | `theme.preset`, `labels`, `formatNumber` | [Themes, identity & motion](/react-phone/native/customization/) |
 | A phone inside a scroll view, modal, or bottom sheet | `variant="card"` / `variant="sheet"`    | [Phone surfaces](/react-phone/native/surfaces/)         |
 | Your own call bar, keypad, or CRM screen             | `PhoneProvider` + `usePhone()`          | [Compose your own](/react-phone/native/components/)     |
 | Calling without React                                | `PhoneClient` from `/core`              | [Compose your own](/react-phone/native/components/#headless-client) |

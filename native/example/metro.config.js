@@ -15,7 +15,9 @@ config.resolver.nodeModulesPaths = [
 // src/, verifying exactly what will be published.
 config.resolver.extraNodeModules = {
   "@azeer-ui-widget/react-native-phone":
-    process.env.PHONE_PACKAGE === "staged" ? path.join(root, ".jsr-stage") : root,
+    process.env.PHONE_PACKAGE === "staged"
+      ? path.join(root, ".jsr-stage")
+      : root,
 };
 
 module.exports = config;

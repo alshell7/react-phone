@@ -5,6 +5,7 @@ import { PanResponder, Platform, View } from "react-native";
 import { Check, Headphones, Mic, Settings, Volume1, Volume2 } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.ts";
 import { usePhoneTheme } from "./theme.ts";
+import { usePhoneLabels } from "./locale.ts";
 import { Button, Divider, PhoneText, PressableScale, type PhoneIcon } from "./primitives.ts";
 import { action } from "./status.ts";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
@@ -19,10 +20,11 @@ export interface VolumeSliderProps {
 export function VolumeSlider({
   value,
   onChange,
-  accessibilityLabel = "Call volume",
+  accessibilityLabel,
   step = 0.05
 }: VolumeSliderProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [width, setWidth] = useState(0);
   const latest = useRef({
     width,
@@ -48,7 +50,7 @@ export function VolumeSlider({
   return /*#__PURE__*/_jsxs(View, {
     accessible: true,
     accessibilityRole: "adjustable",
-    accessibilityLabel: accessibilityLabel,
+    accessibilityLabel: accessibilityLabel ?? labels.callVolume,
     accessibilityValue: {
       min: 0,
       max: 100,
@@ -197,6 +199,7 @@ export function AudioSettings(): ReactElement {
     client
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const capabilities = client.capabilities;
   const [devices, setDevices] = useState<Array<{
     deviceId: string;
@@ -221,7 +224,7 @@ export function AudioSettings(): ReactElement {
   }, [client, capabilities.inputSelection, state.microphone]);
   const inputs = devices.filter(d => d.kind === "audioinput" && d.deviceId);
   const outputs = devices.filter(d => d.kind === "audiooutput" && d.deviceId);
-  const micLabel = state.microphone === "requesting" ? "Waiting for permission…" : state.microphone === "granted" ? "Microphone ready · test again" : "Check microphone access";
+  const micLabel = state.microphone === "requesting" ? labels.waitingForPermission : state.microphone === "granted" ? labels.microphoneReady : labels.checkMicrophone;
   return /*#__PURE__*/_jsxs(View, {
     style: {
       gap: 20,
@@ -229,7 +232,7 @@ export function AudioSettings(): ReactElement {
     },
     children: [/*#__PURE__*/_jsx(Section, {
       icon: Mic,
-      title: "Microphone",
+      title: labels.microphone,
       children: /*#__PURE__*/_jsxs(View, {
         style: {
           gap: 10
@@ -237,7 +240,7 @@ export function AudioSettings(): ReactElement {
         children: [/*#__PURE__*/_jsx(PhoneText, {
           size: 14,
           color: theme.muted,
-          children: state.microphone === "blocked" ? "Access is turned off in system settings." : state.microphone === "denied" ? "Access was denied. You can allow it and try again." : state.microphone === "granted" ? "This app can use your microphone during calls." : "The microphone is used only while you are on a call."
+          children: state.microphone === "blocked" ? labels.microphoneBlocked : state.microphone === "denied" ? labels.microphoneDenied : state.microphone === "granted" ? labels.microphoneGranted : labels.microphoneUnknown
         }), /*#__PURE__*/_jsx(Button, {
           label: micLabel,
           icon: state.microphone === "granted" ? Check : Mic,
@@ -245,18 +248,18 @@ export function AudioSettings(): ReactElement {
           disabled: busy || state.microphone === "requesting",
           onPress: () => action(() => client.testMicrophone())
         }), (state.microphone === "blocked" || state.microphone === "denied") && capabilities.settings ? /*#__PURE__*/_jsx(Button, {
-          label: "Open Settings",
+          label: labels.openSettings,
           icon: Settings,
           tone: "ghost",
           onPress: () => action(() => client.openSettings())
         }) : null, capabilities.inputSelection && inputs.length > 0 ? /*#__PURE__*/_jsxs(View, {
           accessibilityRole: "radiogroup",
-          accessibilityLabel: "Microphone",
+          accessibilityLabel: labels.microphone,
           style: {
             gap: 2
           },
           children: [/*#__PURE__*/_jsx(Option, {
-            label: "System default",
+            label: labels.systemDefault,
             selected: !state.inputDeviceId,
             disabled: busy,
             onPress: () => action(() => client.setInputDevice(""))
@@ -270,15 +273,15 @@ export function AudioSettings(): ReactElement {
       })
     }), /*#__PURE__*/_jsx(Divider, {}), /*#__PURE__*/_jsx(Section, {
       icon: Headphones,
-      title: "Output",
+      title: labels.output,
       children: capabilities.outputSelection && outputs.length > 0 ? /*#__PURE__*/_jsxs(View, {
         accessibilityRole: "radiogroup",
-        accessibilityLabel: "Speakers",
+        accessibilityLabel: labels.speakers,
         style: {
           gap: 2
         },
         children: [/*#__PURE__*/_jsx(Option, {
-          label: "System default",
+          label: labels.systemDefault,
           selected: !state.outputDeviceId,
           onPress: () => action(() => client.setOutputDevice(""))
         }), outputs.map((device, i) => /*#__PURE__*/_jsx(Option, {
@@ -289,11 +292,11 @@ export function AudioSettings(): ReactElement {
       }) : /*#__PURE__*/_jsx(PhoneText, {
         size: 14,
         color: theme.muted,
-        children: capabilities.speaker ? "Use the Speaker button during a call to switch between earpiece and loudspeaker." : client.platform === "web" ? "Audio plays through your system's default output." : "Audio follows the system route. Add an audio session adapter to enable the Speaker button."
+        children: capabilities.speaker ? labels.speakerRoutingHint : client.platform === "web" ? labels.webOutputHint : labels.nativeOutputHint
       })
     }), /*#__PURE__*/_jsx(Divider, {}), /*#__PURE__*/_jsx(Section, {
       icon: Volume2,
-      title: "Call volume",
+      title: labels.callVolume,
       children: /*#__PURE__*/_jsxs(View, {
         style: {
           flexDirection: "row",
@@ -326,7 +329,7 @@ export function AudioSettings(): ReactElement {
     }), /*#__PURE__*/_jsx(PhoneText, {
       size: 12,
       color: theme.muted,
-      children: "Microphone changes apply to your next call."
+      children: labels.nextCallNote
     })]
   });
 }

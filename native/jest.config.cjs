@@ -3,7 +3,10 @@ module.exports = {
   preset: "@react-native/jest-preset",
   testMatch: ["<rootDir>/__tests__/**/*.test.ts?(x)"],
   transform: {
-    "^.+\\.(js|jsx|ts|tsx|mjs|cjs)$": ["babel-jest", { configFile: "./babel.config.cjs" }],
+    "^.+\\.(js|jsx|ts|tsx|mjs|cjs)$": [
+      "babel-jest",
+      { configFile: "./babel.config.cjs" },
+    ],
   },
   transformIgnorePatterns: [
     "node_modules/(?!((jest-)?react-native|@react-native(-community)?|lucide-react-native|react-native-svg)/)",

@@ -42,11 +42,7 @@ export interface SipConfig {
 
 /** Transport and registration status are intentionally distinct from call state. */
 export type ConnectionStatus =
-  | "disconnected"
-  | "connecting"
-  | "registered"
-  | "reconnecting"
-  | "error";
+  "disconnected" | "connecting" | "registered" | "reconnecting" | "error";
 /** Only one call is active per PhoneClient. Additional INVITEs receive 486 Busy. */
 export type CallStatus =
   | "idle"
@@ -60,12 +56,7 @@ export type CallStatus =
   | "ended";
 /** `blocked` means the OS will not show a prompt again; the user must open Settings. */
 export type MicrophoneStatus =
-  | "unknown"
-  | "requesting"
-  | "granted"
-  | "denied"
-  | "blocked"
-  | "unavailable";
+  "unknown" | "requesting" | "granted" | "denied" | "blocked" | "unavailable";
 
 /** Serializable caller data, safe to deliver to lifecycle callbacks. */
 export interface Caller {

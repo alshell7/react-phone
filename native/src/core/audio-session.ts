@@ -2,10 +2,19 @@ import type { AudioSessionAdapter } from "./media.ts";
 
 /** The parts of react-native-incall-manager this adapter uses. */
 export interface InCallManagerLike {
-  start(options?: { media?: "audio" | "video"; auto?: boolean; ringback?: string }): void;
+  start(options?: {
+    media?: "audio" | "video";
+    auto?: boolean;
+    ringback?: string;
+  }): void;
   stop(options?: { busytone?: string }): void;
   setForceSpeakerphoneOn(enabled: boolean | null): void;
-  startRingtone?(ringtone: string, vibratePattern?: number[], iosCategory?: string, seconds?: number): void;
+  startRingtone?(
+    ringtone: string,
+    vibratePattern?: number[],
+    iosCategory?: string,
+    seconds?: number,
+  ): void;
   stopRingtone?(): void;
 }
 
@@ -32,7 +41,8 @@ export function createInCallManagerAudioSession(
   return {
     start(next) {
       if (next === "ringing") {
-        if (systemRingtone && mode === null) manager.startRingtone?.("_DEFAULT_");
+        if (systemRingtone && mode === null)
+          manager.startRingtone?.("_DEFAULT_");
         mode = mode ?? "ringing";
         return;
       }

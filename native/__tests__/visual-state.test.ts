@@ -5,7 +5,10 @@ import { createMedia, silent } from "./helpers/sip.ts";
 
 jest.mock("jssip", () => require("./helpers/sip.ts").jssipMock);
 
-const base = new PhoneClient({ media: createMedia().media, haptics: silent }).getSnapshot();
+const base = new PhoneClient({
+  media: createMedia().media,
+  haptics: silent,
+}).getSnapshot();
 
 describe("SIP visual lifecycle", () => {
   it.each([
@@ -24,15 +27,21 @@ describe("SIP visual lifecycle", () => {
     [{ status: "ended" }, "ended"],
     [{ connection: "error" }, "error"],
     [{ error: { code: "call", message: "x" } }, "error"],
-  ] as Array<[Partial<PhoneSnapshot>, string]>)("maps %o to %s", (patch, result) =>
-    expect(getCallVisualState({ ...base, ...patch })).toBe(result),
+  ] as Array<[Partial<PhoneSnapshot>, string]>)(
+    "maps %o to %s",
+    (patch, result) =>
+      expect(getCallVisualState({ ...base, ...patch })).toBe(result),
   );
   it("speaks from either audio direction but never from a muted local microphone", () => {
     const active: PhoneSnapshot = { ...base, status: "active" };
     expect(getCallVisualState(active, 0.2, 0)).toBe("speaking");
     expect(getCallVisualState(active, 0, 0.2)).toBe("speaking");
     expect(getCallVisualState(active, 0.02, 0.02)).toBe("listening");
-    expect(getCallVisualState({ ...active, muted: true }, 0.2, 0)).toBe("listening");
-    expect(getCallVisualState({ ...active, remoteHeld: true }, 0.2, 0.2)).toBe("held");
+    expect(getCallVisualState({ ...active, muted: true }, 0.2, 0)).toBe(
+      "listening",
+    );
+    expect(getCallVisualState({ ...active, remoteHeld: true }, 0.2, 0.2)).toBe(
+      "held",
+    );
   });
 });

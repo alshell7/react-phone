@@ -99,7 +99,9 @@ class LevelStore {
       if (!this.mode.active) return;
       // Fast attack, gentle release keeps motion lively without flicker.
       const ease = (previous: number, value: number) =>
-        value > previous ? previous * 0.3 + value * 0.7 : previous * 0.6 + value * 0.4;
+        value > previous
+          ? previous * 0.3 + value * 0.7
+          : previous * 0.6 + value * 0.4;
       this.publish({
         input: ease(this.levels.input, next.input),
         output: ease(this.levels.output, next.output),
@@ -122,7 +124,11 @@ function storeFor(client: PhoneClient): LevelStore {
 }
 
 /** Deterministic, speech-shaped spectrum from a single activity level. */
-export function activityBands(level: number, count: number, time: number): number[] {
+export function activityBands(
+  level: number,
+  count: number,
+  time: number,
+): number[] {
   const t = time / 1000;
   return Array.from({ length: count }, (_, i) => {
     const x = count === 1 ? 0.5 : i / (count - 1);

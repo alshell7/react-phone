@@ -23,6 +23,7 @@ Screenshots use simulated calls. The playground opens in **Preview** mode; switc
 | Runtime microphone permission with Settings link | iOS-style keypad, slide-to-answer, Recents from real calls  | Complete components, hooks, or a headless client  |
 | Reconnect, foreground re-registration, ICE loss  | Orb, live waveform, lifecycle bars, avatar                  | Adapters for audio routing, haptics, and tones    |
 | Manual, prefilled, or automatic dialing          | Themes (light/dark/system), haptics, reduced motion         | Typed lifecycle callbacks; MIT; source on JSR     |
+| Smart-dial contact suggestions and speed dial    | 6 theme presets, rounded or circle controls, custom buttons | Full localization (`labels`) and number formatting |
 
 **One audio call per client.** A second INVITE receives `486 Busy Here`. Transfer needs PBX REFER support. Attended transfer, conferencing, recording, video, and emergency calling are outside this release.
 
@@ -99,6 +100,23 @@ The capsule shows registration status, then a live timer and voice bars during c
 | `notify`          | Heads-up banner with caller, Answer, and Decline              |
 | `manual`          | Keep the capsule collapsed; it pulses until the user opens it |
 
+## Make it yours
+
+```tsx
+<SipPhone
+  config={config}
+  theme={{ preset: "midnight", appearance: "system", controlShape: "rounded", answer: "#1e9e4a" }}
+  contacts={myContacts} // smart-dial suggestions as digits are typed (2 6 → Alex Morgan)
+  searchContacts={searchDirectory} // or search a remote directory / device contacts
+  speedDial={{ "1": { name: "Voicemail", number: "*97" } }} // long-press 1
+  extraControls={[{ key: "notes", label: "Notes", icon: NotebookPen, onPress: openNotes }]}
+  labels={spanishLabels} // every string and accessibility label
+  formatNumber={formatNational} // display only; dialing is unaffected
+/>
+```
+
+**[Contacts & speed dial](https://alshell7.github.io/react-phone/native/contacts/) · [Themes, languages & formatting](https://alshell7.github.io/react-phone/native/customization/)**
+
 ## Speaker, ringtone, and haptics
 
 Audio routing is native territory, so it is an adapter instead of a hard dependency:
@@ -130,7 +148,7 @@ function MyCallBar() {
 </PhoneProvider>;
 ```
 
-Every piece is exported: `Dialer`, `Keypad`, `CallerCard`, `CallControls`, `IncomingCallActions`, `SlideToAnswer`, `TransferPanel`, `ConnectionForm`, `AudioSettings`, `CallHistory`, `ConnectionStatus`, `CallTimer`, `ErrorBanner`, `Orb`, `LiveWaveform`, `BarVisualizer`, and the headless `PhoneClient` from `@azeer-ui-widget/react-native-phone/core`. **[Composable API](https://alshell7.github.io/react-phone/native/components/)**
+Every piece is exported: `Dialer`, `Keypad`, `ContactSuggestions`, `CallerCard`, `CallControls`, `IncomingCallActions`, `SlideToAnswer`, `TransferPanel`, `ConnectionForm`, `AudioSettings`, `CallHistory`, `ConnectionStatus`, `CallTimer`, `ErrorBanner`, `Orb`, `LiveWaveform`, `BarVisualizer`, and the headless `PhoneClient` from `@azeer-ui-widget/react-native-phone/core`. **[Composable API](https://alshell7.github.io/react-phone/native/components/)**
 
 ## Develop
 
@@ -138,7 +156,7 @@ Every piece is exported: `Dialer`, `Keypad`, `CallerCard`, `CallControls`, `Inco
 cd native
 npm install
 npm run example            # Expo dev server (press w for web, a for Android, i for iOS)
-npm run check              # publish/ freshness, types, and 142 unit/component tests
+npm run check              # publish/ freshness, types, and 167 unit/component tests
 npm run test:e2e           # Playwright: desktop + mobile UI, and real SIP/WebRTC calls on a local registrar
 npm run test:live          # Real registration against your PBX (.env.local)
 npm run test:live:call     # A real call through your PBX from the web build (opt-in)

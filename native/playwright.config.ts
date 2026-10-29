@@ -10,7 +10,10 @@ export default defineConfig({
     {
       name: "desktop",
       testIgnore: ["**/live-sip.spec.ts", "**/sip-wire.spec.ts"],
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 960 } },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 960 },
+      },
     },
     {
       name: "mobile",
@@ -24,7 +27,10 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         launchOptions: {
-          args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
+          args: [
+            "--use-fake-ui-for-media-stream",
+            "--use-fake-device-for-media-stream",
+          ],
         },
       },
     },
@@ -38,7 +44,10 @@ export default defineConfig({
               ...devices["Desktop Chrome"],
               permissions: ["microphone"],
               launchOptions: {
-                args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
+                args: [
+                  "--use-fake-ui-for-media-stream",
+                  "--use-fake-device-for-media-stream",
+                ],
               },
             },
           },

@@ -9,12 +9,14 @@ import { useAutoDial } from "../react/use-auto-dial.ts";
 import { useDraggable, type PhoneDragHandle, type PhoneDragOptions } from "../react/use-draggable.ts";
 import type { Caller } from "../core/types.ts";
 import { PhoneRoot, mixColors, usePhoneTheme, type PhoneRootProps } from "./theme.ts";
+import { endReasonLabel, usePhoneLabels, usePhoneNumberFormatter } from "./locale.ts";
 import { animateNextLayout, usePhoneMotion } from "./motion.ts";
 import { Appear, IconButton, PhoneText, PressableScale } from "./primitives.ts";
 import { CallTimer, ConnectionStatus, ErrorBanner } from "./status.ts";
 import { Avatar, CallerCard, type CallerCardProps } from "./caller-card.ts";
-import { Dialer } from "./dialer.ts";
-import { CallControls, IncomingCallActions, type CallControl } from "./call-controls.ts";
+import { Dialer, type SpeedDial } from "./dialer.ts";
+import type { ContactSuggestionOptions } from "./contact-suggestions.ts";
+import { CallControls, IncomingCallActions, type CallControl, type PhoneCustomControl } from "./call-controls.ts";
 import { AudioSettings } from "./audio-settings.ts";
 import { CallHistory } from "./call-history.ts";
 import { CallBarVisualizer, CallOrb, CallWaveform, type CallBarVisualizerProps, type CallOrbProps, type CallWaveformProps } from "./call-visuals.ts";
@@ -102,7 +104,22 @@ export interface PhoneWidgetProps extends Omit<PhoneRootProps, "children">, Omit
   /** Change to explicitly repeat an automatic call to the same number. */
   autoDialKey?: string;
   visualization?: PhoneVisualization;
-  controls?: readonly CallControl[];
+  /** Order and choose in-call buttons; include custom control keys to position them. */
+  controls?: readonly (CallControl | (string & {}))[];
+  /** Your own in-call buttons (Notes, Record, Add to CRM, …). */
+  extraControls?: readonly PhoneCustomControl[];
+  /** Contacts to suggest while dialing (matched by number and by keypad letters). */
+  contacts?: readonly Caller[];
+  /** Search a large or remote directory as digits are typed. */
+  searchContacts?: ContactSuggestionOptions["searchContacts"];
+  /** Keypad suggestions: `false` to disable, or `{ recents, limit }`. Defaults to on. */
+  suggestions?: boolean | Pick<ContactSuggestionOptions, "recents" | "limit">;
+  /** Long-press 1–9 on an empty keypad to call these contacts or numbers. */
+  speedDial?: SpeedDial;
+  /** Show the letters under keypad digits. Defaults to true. */
+  keypadLetters?: boolean;
+  /** Show captions under in-call buttons. Defaults to true. */
+  controlLabels?: boolean;
   /** Answer with round buttons (default) or an iOS-style slider. */
   answerStyle?: "buttons" | "slide";
   /** Card variant only: drag the phone by its grip. */
@@ -226,10 +243,12 @@ function LastCall({
     state
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
+  const format = usePhoneNumberFormatter();
   const call = state.call;
   if (!call) return null;
-  const name = caller?.name || caller?.number || "Last call";
-  const reason = call.endReason ?? "Call ended";
+  const name = caller?.name || (caller?.number ? format(caller.number) : labels.lastCall);
+  const reason = endReasonLabel(labels, call.endReason);
   return /*#__PURE__*/_jsxs(View, {
     accessible: true,
     accessibilityLabel: `${name}, ${reason}`,
@@ -290,6 +309,7 @@ function Branding({
   };
 }) {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   if (!branding?.name.trim()) return null;
   const link = branding.href && /^https?:\/\//i.test(branding.href) ? branding.href : null;
   return /*#__PURE__*/_jsxs(View, {
@@ -302,7 +322,7 @@ function Branding({
     children: [/*#__PURE__*/_jsxs(PhoneText, {
       size: 11,
       color: theme.muted,
-      children: ["Powered by", " "]
+      children: [labels.poweredBy, " "]
     }), link ? /*#__PURE__*/_jsx(PhoneText, {
       size: 11,
       weight: "600",
@@ -326,6 +346,8 @@ function Branding({
 export function PhoneWidget({
   theme,
   motion,
+  labels,
+  formatNumber,
   style,
   testID,
   draggable = false,
@@ -338,6 +360,8 @@ export function PhoneWidget({
   return /*#__PURE__*/_jsx(PhoneRoot, {
     theme: theme,
     motion: motion,
+    labels: labels,
+    formatNumber: formatNumber,
     testID: testID,
     style: [screen ? {
       flex: 1
@@ -368,7 +392,7 @@ function WidgetBody({
   preset = "advanced",
   features,
   variant,
-  title = "Your phone",
+  title,
   caller,
   resolveCaller,
   renderAvatar,
@@ -381,21 +405,35 @@ function WidgetBody({
   autoDialKey,
   visualization,
   controls,
+  extraControls,
+  contacts,
+  searchContacts,
+  suggestions = true,
+  speedDial,
+  keypadLetters = true,
+  controlLabels = true,
   answerStyle,
   branding,
   insets = {},
   immersive = true,
   onMinimize,
   drag
-}: Omit<PhoneWidgetProps, "theme" | "motion" | "style" | "testID" | "draggable"> & {
+}: Omit<PhoneWidgetProps, "theme" | "motion" | "labels" | "formatNumber" | "style" | "testID" | "draggable"> & {
   drag: PhoneDragHandle;
 }): ReactElement {
   const {
     state
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const window = useWindowDimensions();
+  // Height actually available to the screen body (frames, split view, and sheets
+  // differ from the window), used to size the keypad and orb so nothing clips.
+  const [viewport, setViewport] = useState(0);
+  const available = viewport || window.height - (insets.top ?? 0) - (insets.bottom ?? 0) - 120;
+  const heading = title ?? labels.title;
+  const suggestionOptions = suggestions === false ? null : suggestions === true ? {} : suggestions;
   const screen = variant === "screen";
   const options = {
     ...phonePresets[preset],
@@ -409,6 +447,7 @@ function WidgetBody({
   const idle = ["idle", "ended"].includes(state.status);
   const connected = ["active", "held"].includes(state.status);
   const visual = visualization?.type ?? (options.waveform ? "waveform" : "none");
+  // `controls` shapes the in-call buttons only; the idle dial pad follows `features.keypad`.
   const keypadAllowed = options.keypad && (!controls || controls.includes("keypad"));
   useAutoDial({
     number: prefilled,
@@ -441,7 +480,7 @@ function WidgetBody({
   const identity = currentCaller && resolveCaller ? resolveCaller(currentCaller) : currentCaller;
   const inCall = phase === "call" || phase === "incoming";
   const large = screen;
-  const orbSize = large ? 168 : 120;
+  const orbSize = large ? Math.max(84, Math.min(168, available - 500)) : 120;
   const visualNode = visual === "orb" || visual === "both" ? /*#__PURE__*/_jsx(View, {
     style: {
       margin: 6
@@ -460,7 +499,7 @@ function WidgetBody({
   }) : null : null;
   const settingsButton = options.audioSettings ? /*#__PURE__*/_jsx(IconButton, {
     icon: settingsOpen ? X : Settings2,
-    accessibilityLabel: settingsOpen ? "Close audio settings" : "Open audio settings",
+    accessibilityLabel: settingsOpen ? labels.closeAudioSettings : labels.openAudioSettings,
     accessibilityState: {
       expanded: settingsOpen
     },
@@ -480,7 +519,7 @@ function WidgetBody({
     },
     children: [onMinimize && !idle ? /*#__PURE__*/_jsx(IconButton, {
       icon: ChevronDown,
-      accessibilityLabel: "Minimize call",
+      accessibilityLabel: labels.minimizeCall,
       onPress: onMinimize,
       color: theme.foreground
     }) : /*#__PURE__*/_jsx(AudioLines, {
@@ -495,12 +534,12 @@ function WidgetBody({
         flex: 1
       },
       accessibilityRole: "header",
-      children: title
+      children: heading
     }), /*#__PURE__*/_jsx(ConnectionStatus, {}), settingsButton]
   });
 
   // Fit the keypad to short phones (iPhone SE) without scrolling where possible.
-  const keySize = screen ? Math.max(56, Math.min(80, (window.height - (insets.top ?? 0) - (insets.bottom ?? 0) - 330) / 5.4)) : 66;
+  const keySize = screen ? Math.max(54, Math.min(80, (available - 390) / 4.7)) : 66;
   let body: ReactNode;
   if (phase === "settings") {
     body = /*#__PURE__*/_jsx(Appear, {
@@ -512,12 +551,12 @@ function WidgetBody({
           size: 20,
           weight: "600",
           accessibilityRole: "header",
-          children: "Audio settings"
+          children: labels.audioSettings
         }), /*#__PURE__*/_jsx(AudioSettings, {})]
       })
     }, "settings");
   } else if (phase === "idle") {
-    const showTabs = options.recents && keypadAllowed;
+    const showTabs = options.recents && options.keypad;
     body = /*#__PURE__*/_jsxs(View, {
       style: {
         gap: 18,
@@ -528,10 +567,10 @@ function WidgetBody({
         onChange: next => toggle(() => setTab(next as "keypad" | "recents")),
         options: [{
           value: "keypad",
-          label: "Keypad"
+          label: labels.keypadTab
         }, {
           value: "recents",
-          label: "Recents"
+          label: labels.recentsTab
         }]
       }) : null, showTabs && tab === "recents" ? /*#__PURE__*/_jsx(CallHistory, {
         onSelect: call => {
@@ -544,7 +583,7 @@ function WidgetBody({
           flex: screen ? 1 : undefined,
           justifyContent: screen ? "flex-end" : undefined
         },
-        children: [!keypadAllowed ? /*#__PURE__*/_jsx(Appear, {
+        children: [!options.keypad ? /*#__PURE__*/_jsx(Appear, {
           children: /*#__PURE__*/_jsx(CallerCard, {
             caller: identity,
             showAvatar: !visualNode && avatar,
@@ -552,7 +591,10 @@ function WidgetBody({
             renderAvatar: renderAvatar,
             renderTags: renderTags
           })
-        }, state.call?.id ?? "greeting") : state.status === "ended" && state.call ? /*#__PURE__*/_jsx(Appear, {
+        }, state.call?.id ?? "greeting") : state.status === "ended" && state.call && (!number || number === state.call.caller.number) ?
+        /*#__PURE__*/
+        // The last-call summary yields to suggestions once a new number is typed.
+        _jsx(Appear, {
           children: /*#__PURE__*/_jsx(LastCall, {
             caller: identity,
             renderAvatar: renderAvatar
@@ -560,9 +602,17 @@ function WidgetBody({
         }, state.call.id) : null, /*#__PURE__*/_jsx(Dialer, {
           value: number,
           onChange: setNumber,
-          showKeypad: keypadAllowed,
+          showKeypad: options.keypad,
           keySize: keySize,
-          caller: caller && caller.number === number ? caller : undefined
+          caller: caller && caller.number === number ? caller : undefined,
+          suggestions: Boolean(suggestionOptions),
+          recents: suggestionOptions?.recents,
+          limit: suggestionOptions?.limit,
+          contacts: contacts,
+          searchContacts: searchContacts,
+          speedDial: speedDial,
+          showLetters: keypadLetters,
+          renderAvatar: renderAvatar
         })]
       })]
     }, "idle");
@@ -612,12 +662,13 @@ function WidgetBody({
         }), /*#__PURE__*/_jsx(CallTimer, {})]
       }), /*#__PURE__*/_jsx(Dialer, {
         showKeypad: true,
-        keySize: keySize
+        keySize: keySize,
+        showLetters: keypadLetters
       }), /*#__PURE__*/_jsx(CallControls, {
         buttons: ["hangup"]
       }), /*#__PURE__*/_jsx(PressableScale, {
         onPress: () => toggle(() => setKeypadOpen(false)),
-        accessibilityLabel: "Hide keypad",
+        accessibilityLabel: labels.hideKeypad,
         style: {
           alignSelf: "center",
           minHeight: 40,
@@ -628,7 +679,7 @@ function WidgetBody({
           size: 15,
           weight: "600",
           color: theme.accent,
-          children: "Hide"
+          children: labels.hide
         })
       })]
     }, "dtmf");
@@ -662,7 +713,9 @@ function WidgetBody({
         keypadOpen: keypadOpen,
         onKeypadToggle: () => toggle(() => setKeypadOpen(!keypadOpen)),
         buttonSize: screen ? 72 : 62,
-        tone: screen && immersive ? "glass" : "neutral"
+        tone: screen && immersive ? "glass" : "neutral",
+        extraControls: extraControls,
+        showLabels: controlLabels
       })]
     }, "call");
   }
@@ -682,18 +735,18 @@ function WidgetBody({
     }), /*#__PURE__*/_jsx(PhoneText, {
       size: 12,
       color: theme.muted,
-      children: state.connection === "registered" ? Platform.OS === "web" ? "Audio handled by your browser" : "Audio handled by your device" : "Connect an account to make calls"
+      children: state.connection === "registered" ? Platform.OS === "web" ? labels.audioHandledByBrowser : labels.audioHandledByDevice : labels.connectAccountToCall
     })]
   });
   const grip = drag.enabled ? /*#__PURE__*/_jsx(View, {
     ...drag.handlers,
     accessible: true,
     accessibilityRole: "adjustable",
-    accessibilityLabel: "Move phone",
+    accessibilityLabel: labels.movePhone,
     accessibilityHint: "Drag to move. Activate to reset its position.",
     accessibilityActions: [{
       name: "activate",
-      label: "Reset position"
+      label: labels.resetPosition
     }],
     onAccessibilityAction: drag.reset,
     style: {
@@ -707,7 +760,7 @@ function WidgetBody({
     })
   }) : null;
   if (screen) return /*#__PURE__*/_jsxs(View, {
-    accessibilityLabel: title,
+    accessibilityLabel: heading,
     style: {
       flex: 1,
       backgroundColor: theme.background,
@@ -726,6 +779,7 @@ function WidgetBody({
         style: {
           flex: 1
         },
+        onLayout: event => setViewport(event.nativeEvent.layout.height),
         contentContainerStyle: {
           flexGrow: 1
         },
@@ -739,7 +793,7 @@ function WidgetBody({
     })]
   });
   if (variant === "sheet") return /*#__PURE__*/_jsxs(View, {
-    accessibilityLabel: title,
+    accessibilityLabel: heading,
     children: [headerNode, /*#__PURE__*/_jsxs(View, {
       style: {
         paddingHorizontal: 20,
@@ -753,7 +807,7 @@ function WidgetBody({
     })]
   });
   return /*#__PURE__*/_jsxs(View, {
-    accessibilityLabel: title,
+    accessibilityLabel: heading,
     style: {
       backgroundColor: theme.background,
       borderRadius: theme.radius,

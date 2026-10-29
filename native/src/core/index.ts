@@ -33,5 +33,12 @@ export type {
   ToneStep,
   AudioContextLike,
 } from "./tones.ts";
+export {
+  matchContacts,
+  toKeypadDigits,
+  keypadDigit,
+  dialQuery,
+} from "./contacts.ts";
+export type { ContactMatch } from "./contacts.ts";
 export { getCallVisualState } from "./visual-state.ts";
 export type { CallVisualState } from "./visual-state.ts";

@@ -4,6 +4,11 @@ import { AudioLines } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.tsx";
 import type { Caller } from "../core/types.ts";
 import { usePhoneTheme } from "./theme.tsx";
+import {
+  endReasonLabel,
+  usePhoneLabels,
+  usePhoneNumberFormatter,
+} from "./locale.tsx";
 import { PhoneText, PulseRings, StatusDot } from "./primitives.tsx";
 import { CallTimer } from "./status.tsx";
 
@@ -24,7 +29,8 @@ export interface CallerCardProps {
 export function initialsOf(caller?: Partial<Caller>): string {
   const source = (caller?.name || caller?.number || "").trim();
   if (!source) return "";
-  if (!caller?.name) return source.replace(/[^\d+*#]/g, "").slice(-2) || source.slice(0, 2);
+  if (!caller?.name)
+    return source.replace(/[^\d+*#]/g, "").slice(-2) || source.slice(0, 2);
   return source
     .split(/\s+/)
     .map((part) => part[0])
@@ -46,7 +52,8 @@ export function Avatar({
   const theme = usePhoneTheme();
   const [failed, setFailed] = useState<string | null>(null);
   const initials = initialsOf(caller);
-  const image = caller?.avatarUrl && failed !== caller.avatarUrl ? caller.avatarUrl : null;
+  const image =
+    caller?.avatarUrl && failed !== caller.avatarUrl ? caller.avatarUrl : null;
   return (
     <View
       importantForAccessibility="no-hide-descendants"
@@ -94,20 +101,22 @@ export function CallerCard({
 }: CallerCardProps): ReactElement {
   const { state } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
+  const format = usePhoneNumberFormatter();
   const caller = supplied ?? state.call?.caller;
   const large = size === "large";
   const busy = !["idle", "ended"].includes(state.status);
   const ringing = state.status === "incoming" || state.status === "ringing";
   const status = {
-    idle: "Ready to connect",
-    "requesting-microphone": "Waiting for microphone…",
-    dialing: "Calling…",
-    ringing: "Ringing…",
-    incoming: "Incoming call",
-    answering: "Connecting…",
-    active: state.remoteHeld ? "Caller put you on hold" : "Connected",
-    held: "On hold",
-    ended: state.call?.endReason ?? "Call ended",
+    idle: labels.readyToConnect,
+    "requesting-microphone": labels.waitingForMicrophone,
+    dialing: labels.calling,
+    ringing: labels.ringing,
+    incoming: labels.incomingCall,
+    answering: labels.answering,
+    active: state.remoteHeld ? labels.remoteHold : labels.connected,
+    held: labels.onHold,
+    ended: endReasonLabel(labels, state.call?.endReason),
   }[state.status];
   const avatarSize = large ? 112 : 88;
   const text = color ?? theme.foreground;
@@ -116,8 +125,18 @@ export function CallerCard({
     <View style={{ alignItems: "center", gap: large ? 14 : 10 }}>
       {visual ??
         (showAvatar ? (
-          <View style={{ alignItems: "center", justifyContent: "center", margin: 6 }}>
-            <PulseRings size={avatarSize} color={theme.accent} active={ringing} />
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              margin: 6,
+            }}
+          >
+            <PulseRings
+              size={avatarSize}
+              color={theme.accent}
+              active={ringing}
+            />
             <Avatar caller={caller} size={avatarSize} render={renderAvatar} />
           </View>
         ) : null)}
@@ -132,17 +151,34 @@ export function CallerCard({
           accessibilityRole="header"
           style={{ textAlign: "center", letterSpacing: large ? -0.4 : -0.2 }}
         >
-          {caller?.name || caller?.number || "Ready when you are"}
+          {caller?.name ||
+            (caller?.number ? format(caller.number) : labels.idleTitle)}
         </PhoneText>
-        <PhoneText size={large ? 17 : 15} color={subtle} numberOfLines={1} style={{ textAlign: "center", opacity: color ? 0.75 : 1 }}>
-          {caller?.name ? caller.number : busy ? " " : "Dial a number. Make a connection."}
+        <PhoneText
+          size={large ? 17 : 15}
+          color={subtle}
+          numberOfLines={1}
+          style={{ textAlign: "center", opacity: color ? 0.75 : 1 }}
+        >
+          {caller?.name
+            ? format(caller.number)
+            : busy
+              ? " "
+              : labels.idleSubtitle}
         </PhoneText>
       </View>
       {caller &&
         (renderTags ? (
           renderTags(caller)
         ) : caller.tags?.length ? (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
             {caller.tags.map((tag, i) => (
               <View
                 key={`${tag}-${i}`}
@@ -164,9 +200,19 @@ export function CallerCard({
         <View
           accessible
           accessibilityLiveRegion="polite"
-          style={{ flexDirection: "row", alignItems: "center", gap: 7, minHeight: 22 }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 7,
+            minHeight: 22,
+          }}
         >
-          {busy && <StatusDot color={theme.accent} pulsing={state.status !== "active" && state.status !== "held"} />}
+          {busy && (
+            <StatusDot
+              color={theme.accent}
+              pulsing={state.status !== "active" && state.status !== "held"}
+            />
+          )}
           <PhoneText size={15} weight="500" color={subtle}>
             {status}
           </PhoneText>

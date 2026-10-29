@@ -4,6 +4,7 @@ import type { ReactElement } from "../../react-types.d.ts";
 import { Animated, Easing, View, type StyleProp, type ViewStyle } from "react-native";
 import { usePhoneMotion } from "../motion.ts";
 import { usePhoneTheme } from "../theme.ts";
+import { usePhoneLabels } from "../locale.ts";
 import { jsx as _jsx } from "react/jsx-runtime";
 import type { CallVisualState } from "../../core/visual-state.ts";
 export interface BarVisualizerProps {
@@ -102,6 +103,7 @@ export function BarVisualizer({
   testID
 }: BarVisualizerProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const count = Math.min(32, Math.max(1, Math.round(barCount) || 12));
   const moving = motion.enabled && animate;
@@ -131,7 +133,7 @@ export function BarVisualizer({
     testID: testID,
     accessible: true,
     accessibilityRole: "image",
-    accessibilityLabel: `Voice bars: ${state}`,
+    accessibilityLabel: labels.voiceBars(state),
     style: [{
       height,
       flexDirection: "row",

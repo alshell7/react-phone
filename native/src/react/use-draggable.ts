@@ -45,15 +45,24 @@ export function useDraggable(
   const config = typeof option === "boolean" ? { enabled: option } : option;
   const enabled = config.enabled !== false && option !== false;
   const initial = config.initialPosition ?? { x: 0, y: 0 };
-  const translate = useRef(new Animated.ValueXY(config.position ?? initial)).current;
+  const translate = useRef(
+    new Animated.ValueXY(config.position ?? initial),
+  ).current;
   const [dragging, setDragging] = useState(false);
   const latest = useRef(config);
   latest.current = config;
   const committed = useRef<PhonePosition>(config.position ?? initial);
-  const frame = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const frame = useRef<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   useEffect(() => {
-    const next = enabled ? (config.position ?? committed.current) : { x: 0, y: 0 };
+    const next = enabled
+      ? (config.position ?? committed.current)
+      : { x: 0, y: 0 };
     committed.current = next;
     translate.setValue(next);
   }, [enabled, config.position?.x, config.position?.y, translate]);
@@ -72,7 +81,10 @@ export function useDraggable(
     const minX = margin - baseX;
     const maxX = Math.max(minX, window.width - margin - baseX - rect.width);
     const minY = margin - baseY;
-    const maxY = Math.max(minY, window.height - margin - baseY - Math.min(rect.height, 120));
+    const maxY = Math.max(
+      minY,
+      window.height - margin - baseY - Math.min(rect.height, 120),
+    );
     return {
       x: Math.min(maxX, Math.max(minX, x)),
       y: Math.min(maxY, Math.max(minY, y)),
@@ -92,13 +104,16 @@ export function useDraggable(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) + Math.abs(g.dy) > 2,
+        onMoveShouldSetPanResponder: (_, g) =>
+          Math.abs(g.dx) + Math.abs(g.dy) > 2,
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: () => {
           setDragging(true);
-          ref.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
-            frame.current = { x, y, width, height };
-          });
+          ref.current?.measureInWindow(
+            (x: number, y: number, width: number, height: number) => {
+              frame.current = { x, y, width, height };
+            },
+          );
         },
         onPanResponderMove: (_, g) => {
           const next = clampRef.current({

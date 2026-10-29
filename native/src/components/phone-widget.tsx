@@ -35,16 +35,33 @@ import {
   type PhoneDragOptions,
 } from "../react/use-draggable.ts";
 import type { Caller } from "../core/types.ts";
-import { PhoneRoot, mixColors, usePhoneTheme, type PhoneRootProps } from "./theme.tsx";
+import {
+  PhoneRoot,
+  mixColors,
+  usePhoneTheme,
+  type PhoneRootProps,
+} from "./theme.tsx";
+import {
+  endReasonLabel,
+  usePhoneLabels,
+  usePhoneNumberFormatter,
+} from "./locale.tsx";
 import { animateNextLayout, usePhoneMotion } from "./motion.tsx";
-import { Appear, IconButton, PhoneText, PressableScale } from "./primitives.tsx";
+import {
+  Appear,
+  IconButton,
+  PhoneText,
+  PressableScale,
+} from "./primitives.tsx";
 import { CallTimer, ConnectionStatus, ErrorBanner } from "./status.tsx";
 import { Avatar, CallerCard, type CallerCardProps } from "./caller-card.tsx";
-import { Dialer } from "./dialer.tsx";
+import { Dialer, type SpeedDial } from "./dialer.tsx";
+import type { ContactSuggestionOptions } from "./contact-suggestions.tsx";
 import {
   CallControls,
   IncomingCallActions,
   type CallControl,
+  type PhoneCustomControl,
 } from "./call-controls.tsx";
 import { AudioSettings } from "./audio-settings.tsx";
 import { CallHistory } from "./call-history.tsx";
@@ -81,7 +98,9 @@ export interface PhoneFeatures {
 }
 
 /** Presets are ordinary feature objects; override any feature per instance. */
-export const phonePresets: Readonly<Record<PhonePreset, Readonly<PhoneFeatures>>> = {
+export const phonePresets: Readonly<
+  Record<PhonePreset, Readonly<PhoneFeatures>>
+> = {
   basic: {
     mute: true,
     keypad: false,
@@ -122,7 +141,8 @@ export interface SafeAreaInsets {
 }
 
 export interface PhoneWidgetProps
-  extends Omit<PhoneRootProps, "children">,
+  extends
+    Omit<PhoneRootProps, "children">,
     Omit<CallerCardProps, "caller" | "visual" | "size" | "color"> {
   preset?: PhonePreset;
   features?: Partial<PhoneFeatures>;
@@ -146,7 +166,22 @@ export interface PhoneWidgetProps
   /** Change to explicitly repeat an automatic call to the same number. */
   autoDialKey?: string;
   visualization?: PhoneVisualization;
-  controls?: readonly CallControl[];
+  /** Order and choose in-call buttons; include custom control keys to position them. */
+  controls?: readonly (CallControl | (string & {}))[];
+  /** Your own in-call buttons (Notes, Record, Add to CRM, …). */
+  extraControls?: readonly PhoneCustomControl[];
+  /** Contacts to suggest while dialing (matched by number and by keypad letters). */
+  contacts?: readonly Caller[];
+  /** Search a large or remote directory as digits are typed. */
+  searchContacts?: ContactSuggestionOptions["searchContacts"];
+  /** Keypad suggestions: `false` to disable, or `{ recents, limit }`. Defaults to on. */
+  suggestions?: boolean | Pick<ContactSuggestionOptions, "recents" | "limit">;
+  /** Long-press 1–9 on an empty keypad to call these contacts or numbers. */
+  speedDial?: SpeedDial;
+  /** Show the letters under keypad digits. Defaults to true. */
+  keypadLetters?: boolean;
+  /** Show captions under in-call buttons. Defaults to true. */
+  controlLabels?: boolean;
   /** Answer with round buttons (default) or an iOS-style slider. */
   answerStyle?: "buttons" | "slide";
   /** Card variant only: drag the phone by its grip. */
@@ -165,7 +200,11 @@ type Phase = "settings" | "idle" | "incoming" | "call";
 
 function ImmersiveBackground(): ReactElement {
   const theme = usePhoneTheme();
-  const top = mixColors(theme.background, theme.accent, theme.appearance === "dark" ? 0.32 : 0.2);
+  const top = mixColors(
+    theme.background,
+    theme.accent,
+    theme.appearance === "dark" ? 0.32 : 0.2,
+  );
   return (
     <Svg
       pointerEvents="none"
@@ -199,7 +238,13 @@ function Segmented({
   return (
     <View
       accessibilityRole="tablist"
-      style={{ flexDirection: "row", padding: 3, borderRadius: 12, backgroundColor: theme.surface, alignSelf: "stretch" }}
+      style={{
+        flexDirection: "row",
+        padding: 3,
+        borderRadius: 12,
+        backgroundColor: theme.surface,
+        alignSelf: "stretch",
+      }}
     >
       {options.map((option) => {
         const selected = option.value === value;
@@ -221,7 +266,11 @@ function Segmented({
               boxShadow: selected ? "0 1px 3px rgba(0,0,0,0.12)" : undefined,
             }}
           >
-            <PhoneText size={14} weight={selected ? "600" : "500"} color={selected ? theme.foreground : theme.muted}>
+            <PhoneText
+              size={14}
+              weight={selected ? "600" : "500"}
+              color={selected ? theme.foreground : theme.muted}
+            >
               {option.label}
             </PhoneText>
           </PressableScale>
@@ -241,10 +290,13 @@ function LastCall({
 }) {
   const { state } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
+  const format = usePhoneNumberFormatter();
   const call = state.call;
   if (!call) return null;
-  const name = caller?.name || caller?.number || "Last call";
-  const reason = call.endReason ?? "Call ended";
+  const name =
+    caller?.name || (caller?.number ? format(caller.number) : labels.lastCall);
+  const reason = endReasonLabel(labels, call.endReason);
   return (
     <View
       accessible
@@ -284,14 +336,27 @@ function LastCall({
   );
 }
 
-function Branding({ branding }: { branding?: { name: string; href?: string } }) {
+function Branding({
+  branding,
+}: {
+  branding?: { name: string; href?: string };
+}) {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   if (!branding?.name.trim()) return null;
-  const link = branding.href && /^https?:\/\//i.test(branding.href) ? branding.href : null;
+  const link =
+    branding.href && /^https?:\/\//i.test(branding.href) ? branding.href : null;
   return (
-    <View style={{ flexDirection: "row", justifyContent: "center", paddingBottom: 12, paddingTop: 2 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "center",
+        paddingBottom: 12,
+        paddingTop: 2,
+      }}
+    >
       <PhoneText size={11} color={theme.muted}>
-        Powered by{" "}
+        {labels.poweredBy}{" "}
       </PhoneText>
       {link ? (
         <PhoneText
@@ -317,6 +382,8 @@ function Branding({ branding }: { branding?: { name: string; href?: string } }) 
 export function PhoneWidget({
   theme,
   motion,
+  labels,
+  formatNumber,
   style,
   testID,
   draggable = false,
@@ -330,9 +397,15 @@ export function PhoneWidget({
     <PhoneRoot
       theme={theme}
       motion={motion}
+      labels={labels}
+      formatNumber={formatNumber}
       testID={testID}
       style={[
-        screen ? { flex: 1 } : variant === "sheet" ? { alignSelf: "stretch" } : { alignSelf: "center", width: "100%", maxWidth: 400 },
+        screen
+          ? { flex: 1 }
+          : variant === "sheet"
+            ? { alignSelf: "stretch" }
+            : { alignSelf: "center", width: "100%", maxWidth: 400 },
         style,
       ]}
     >
@@ -353,7 +426,7 @@ function WidgetBody({
   preset = "advanced",
   features,
   variant,
-  title = "Your phone",
+  title,
   caller,
   resolveCaller,
   renderAvatar,
@@ -366,19 +439,44 @@ function WidgetBody({
   autoDialKey,
   visualization,
   controls,
+  extraControls,
+  contacts,
+  searchContacts,
+  suggestions = true,
+  speedDial,
+  keypadLetters = true,
+  controlLabels = true,
   answerStyle,
   branding,
   insets = {},
   immersive = true,
   onMinimize,
   drag,
-}: Omit<PhoneWidgetProps, "theme" | "motion" | "style" | "testID" | "draggable"> & {
+}: Omit<
+  PhoneWidgetProps,
+  | "theme"
+  | "motion"
+  | "labels"
+  | "formatNumber"
+  | "style"
+  | "testID"
+  | "draggable"
+> & {
   drag: PhoneDragHandle;
 }): ReactElement {
   const { state } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const window = useWindowDimensions();
+  // Height actually available to the screen body (frames, split view, and sheets
+  // differ from the window), used to size the keypad and orb so nothing clips.
+  const [viewport, setViewport] = useState(0);
+  const available =
+    viewport || window.height - (insets.top ?? 0) - (insets.bottom ?? 0) - 120;
+  const heading = title ?? labels.title;
+  const suggestionOptions =
+    suggestions === false ? null : suggestions === true ? {} : suggestions;
   const screen = variant === "screen";
   const options = { ...phonePresets[preset], ...features };
   const prefilled = defaultNumber || caller?.number || "";
@@ -388,8 +486,11 @@ function WidgetBody({
   const [tab, setTab] = useState<"keypad" | "recents">("keypad");
   const idle = ["idle", "ended"].includes(state.status);
   const connected = ["active", "held"].includes(state.status);
-  const visual = visualization?.type ?? (options.waveform ? "waveform" : "none");
-  const keypadAllowed = options.keypad && (!controls || controls.includes("keypad"));
+  const visual =
+    visualization?.type ?? (options.waveform ? "waveform" : "none");
+  // `controls` shapes the in-call buttons only; the idle dial pad follows `features.keypad`.
+  const keypadAllowed =
+    options.keypad && (!controls || controls.includes("keypad"));
   useAutoDial({
     number: prefilled,
     enabled: autoDial,
@@ -424,11 +525,18 @@ function WidgetBody({
     fn();
   };
 
-  const currentCaller = !idle ? state.call?.caller : state.status === "ended" ? state.call?.caller : caller;
-  const identity = currentCaller && resolveCaller ? resolveCaller(currentCaller) : currentCaller;
+  const currentCaller = !idle
+    ? state.call?.caller
+    : state.status === "ended"
+      ? state.call?.caller
+      : caller;
+  const identity =
+    currentCaller && resolveCaller
+      ? resolveCaller(currentCaller)
+      : currentCaller;
   const inCall = phase === "call" || phase === "incoming";
   const large = screen;
-  const orbSize = large ? 168 : 120;
+  const orbSize = large ? Math.max(84, Math.min(168, available - 500)) : 120;
   const visualNode =
     visual === "orb" || visual === "both" ? (
       <View style={{ margin: 6 }}>
@@ -436,20 +544,28 @@ function WidgetBody({
       </View>
     ) : undefined;
   const avatar =
-    showAvatar ?? (visual === "avatar" || (visual === "none" && visualization?.type === undefined) || visual === "waveform" || visual === "bars");
+    showAvatar ??
+    (visual === "avatar" ||
+      (visual === "none" && visualization?.type === undefined) ||
+      visual === "waveform" ||
+      visual === "bars");
   const audioVisual =
     connected && (visual === "waveform" || visual === "both") ? (
       <CallWaveform {...visualization?.waveform} />
-    ) : connected || state.status === "dialing" || state.status === "ringing"
-      ? visual === "bars"
-        ? <CallBarVisualizer height={56} {...visualization?.bars} />
-        : null
-      : null;
+    ) : connected ||
+      state.status === "dialing" ||
+      state.status === "ringing" ? (
+      visual === "bars" ? (
+        <CallBarVisualizer height={56} {...visualization?.bars} />
+      ) : null
+    ) : null;
 
   const settingsButton = options.audioSettings ? (
     <IconButton
       icon={settingsOpen ? X : Settings2}
-      accessibilityLabel={settingsOpen ? "Close audio settings" : "Open audio settings"}
+      accessibilityLabel={
+        settingsOpen ? labels.closeAudioSettings : labels.openAudioSettings
+      }
       accessibilityState={{ expanded: settingsOpen }}
       onPress={() => toggle(() => setSettingsOpen(!settingsOpen))}
       testID="audio-settings-toggle"
@@ -473,12 +589,23 @@ function WidgetBody({
         }}
       >
         {onMinimize && !idle ? (
-          <IconButton icon={ChevronDown} accessibilityLabel="Minimize call" onPress={onMinimize} color={theme.foreground} />
+          <IconButton
+            icon={ChevronDown}
+            accessibilityLabel={labels.minimizeCall}
+            onPress={onMinimize}
+            color={theme.foreground}
+          />
         ) : (
           <AudioLines size={19} color={theme.foreground} strokeWidth={2} />
         )}
-        <PhoneText size={16} weight="600" numberOfLines={1} style={{ flex: 1 }} accessibilityRole="header">
-          {title}
+        <PhoneText
+          size={16}
+          weight="600"
+          numberOfLines={1}
+          style={{ flex: 1 }}
+          accessibilityRole="header"
+        >
+          {heading}
         </PhoneText>
         <ConnectionStatus />
         {settingsButton}
@@ -487,7 +614,7 @@ function WidgetBody({
 
   // Fit the keypad to short phones (iPhone SE) without scrolling where possible.
   const keySize = screen
-    ? Math.max(56, Math.min(80, (window.height - (insets.top ?? 0) - (insets.bottom ?? 0) - 330) / 5.4))
+    ? Math.max(54, Math.min(80, (available - 390) / 4.7))
     : 66;
   let body: ReactNode;
   if (phase === "settings") {
@@ -495,23 +622,25 @@ function WidgetBody({
       <Appear key="settings">
         <View style={{ gap: 14 }}>
           <PhoneText size={20} weight="600" accessibilityRole="header">
-            Audio settings
+            {labels.audioSettings}
           </PhoneText>
           <AudioSettings />
         </View>
       </Appear>
     );
   } else if (phase === "idle") {
-    const showTabs = options.recents && keypadAllowed;
+    const showTabs = options.recents && options.keypad;
     body = (
       <View key="idle" style={{ gap: 18, flex: screen ? 1 : undefined }}>
         {showTabs ? (
           <Segmented
             value={tab}
-            onChange={(next) => toggle(() => setTab(next as "keypad" | "recents"))}
+            onChange={(next) =>
+              toggle(() => setTab(next as "keypad" | "recents"))
+            }
             options={[
-              { value: "keypad", label: "Keypad" },
-              { value: "recents", label: "Recents" },
+              { value: "keypad", label: labels.keypadTab },
+              { value: "recents", label: labels.recentsTab },
             ]}
           />
         ) : null}
@@ -523,8 +652,14 @@ function WidgetBody({
             }}
           />
         ) : (
-          <View style={{ gap: 18, flex: screen ? 1 : undefined, justifyContent: screen ? "flex-end" : undefined }}>
-            {!keypadAllowed ? (
+          <View
+            style={{
+              gap: 18,
+              flex: screen ? 1 : undefined,
+              justifyContent: screen ? "flex-end" : undefined,
+            }}
+          >
+            {!options.keypad ? (
               <Appear key={state.call?.id ?? "greeting"}>
                 <CallerCard
                   caller={identity}
@@ -534,7 +669,10 @@ function WidgetBody({
                   renderTags={renderTags}
                 />
               </Appear>
-            ) : state.status === "ended" && state.call ? (
+            ) : state.status === "ended" &&
+              state.call &&
+              (!number || number === state.call.caller.number) ? (
+              // The last-call summary yields to suggestions once a new number is typed.
               <Appear key={state.call.id}>
                 <LastCall caller={identity} renderAvatar={renderAvatar} />
               </Appear>
@@ -542,9 +680,17 @@ function WidgetBody({
             <Dialer
               value={number}
               onChange={setNumber}
-              showKeypad={keypadAllowed}
+              showKeypad={options.keypad}
               keySize={keySize}
               caller={caller && caller.number === number ? caller : undefined}
+              suggestions={Boolean(suggestionOptions)}
+              recents={suggestionOptions?.recents}
+              limit={suggestionOptions?.limit}
+              contacts={contacts}
+              searchContacts={searchContacts}
+              speedDial={speedDial}
+              showLetters={keypadLetters}
+              renderAvatar={renderAvatar}
             />
           </View>
         )}
@@ -553,7 +699,12 @@ function WidgetBody({
   } else if (phase === "incoming") {
     body = (
       <View key="incoming" style={{ gap: 28, flex: screen ? 1 : undefined }}>
-        <Appear style={{ flex: screen ? 1 : undefined, justifyContent: screen ? "center" : undefined }}>
+        <Appear
+          style={{
+            flex: screen ? 1 : undefined,
+            justifyContent: screen ? "center" : undefined,
+          }}
+        >
           <CallerCard
             caller={identity}
             size={large ? "large" : "regular"}
@@ -563,35 +714,66 @@ function WidgetBody({
             renderTags={renderTags}
           />
         </Appear>
-        <IncomingCallActions answerStyle={answerStyle} size={screen ? 76 : 68} />
+        <IncomingCallActions
+          answerStyle={answerStyle}
+          size={screen ? 76 : 68}
+        />
       </View>
     );
   } else if (keypadOpen && connected) {
     body = (
-      <View key="dtmf" style={{ gap: 18, flex: screen ? 1 : undefined, justifyContent: screen ? "flex-end" : undefined }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+      <View
+        key="dtmf"
+        style={{
+          gap: 18,
+          flex: screen ? 1 : undefined,
+          justifyContent: screen ? "flex-end" : undefined,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+        >
           <PhoneText size={15} weight="600" numberOfLines={1}>
             {identity?.name || identity?.number}
           </PhoneText>
           <CallTimer />
         </View>
-        <Dialer showKeypad keySize={keySize} />
+        <Dialer showKeypad keySize={keySize} showLetters={keypadLetters} />
         <CallControls buttons={["hangup"]} />
         <PressableScale
           onPress={() => toggle(() => setKeypadOpen(false))}
-          accessibilityLabel="Hide keypad"
-          style={{ alignSelf: "center", minHeight: 40, justifyContent: "center", paddingHorizontal: 16 }}
+          accessibilityLabel={labels.hideKeypad}
+          style={{
+            alignSelf: "center",
+            minHeight: 40,
+            justifyContent: "center",
+            paddingHorizontal: 16,
+          }}
         >
           <PhoneText size={15} weight="600" color={theme.accent}>
-            Hide
+            {labels.hide}
           </PhoneText>
         </PressableScale>
       </View>
     );
   } else {
     body = (
-      <View key="call" style={{ gap: screen ? 20 : 18, flex: screen ? 1 : undefined }}>
-        <Appear style={{ flex: screen ? 1 : undefined, justifyContent: screen ? "center" : undefined, gap: 16 }}>
+      <View
+        key="call"
+        style={{ gap: screen ? 20 : 18, flex: screen ? 1 : undefined }}
+      >
+        <Appear
+          style={{
+            flex: screen ? 1 : undefined,
+            justifyContent: screen ? "center" : undefined,
+            gap: 16,
+          }}
+        >
           <CallerCard
             caller={identity}
             size={large ? "large" : "regular"}
@@ -613,6 +795,8 @@ function WidgetBody({
           onKeypadToggle={() => toggle(() => setKeypadOpen(!keypadOpen))}
           buttonSize={screen ? 72 : 62}
           tone={screen && immersive ? "glass" : "neutral"}
+          extraControls={extraControls}
+          showLabels={controlLabels}
         />
       </View>
     );
@@ -637,9 +821,9 @@ function WidgetBody({
         <PhoneText size={12} color={theme.muted}>
           {state.connection === "registered"
             ? Platform.OS === "web"
-              ? "Audio handled by your browser"
-              : "Audio handled by your device"
-            : "Connect an account to make calls"}
+              ? labels.audioHandledByBrowser
+              : labels.audioHandledByDevice
+            : labels.connectAccountToCall}
         </PhoneText>
       </View>
     );
@@ -649,9 +833,9 @@ function WidgetBody({
       {...drag.handlers}
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel="Move phone"
+      accessibilityLabel={labels.movePhone}
       accessibilityHint="Drag to move. Activate to reset its position."
-      accessibilityActions={[{ name: "activate", label: "Reset position" }]}
+      accessibilityActions={[{ name: "activate", label: labels.resetPosition }]}
       onAccessibilityAction={drag.reset}
       style={{ alignItems: "center", paddingTop: 6, minHeight: 24 }}
     >
@@ -662,8 +846,12 @@ function WidgetBody({
   if (screen)
     return (
       <View
-        accessibilityLabel={title}
-        style={{ flex: 1, backgroundColor: theme.background, overflow: "hidden" }}
+        accessibilityLabel={heading}
+        style={{
+          flex: 1,
+          backgroundColor: theme.background,
+          overflow: "hidden",
+        }}
       >
         {immersive && inCall ? <ImmersiveBackground /> : null}
         <View
@@ -681,6 +869,7 @@ function WidgetBody({
           {/* Scrolls only when content cannot fit, never overlapping the header. */}
           <ScrollView
             style={{ flex: 1 }}
+            onLayout={(event) => setViewport(event.nativeEvent.layout.height)}
             contentContainerStyle={{ flexGrow: 1 }}
             bounces={false}
             keyboardShouldPersistTaps="handled"
@@ -696,9 +885,16 @@ function WidgetBody({
 
   if (variant === "sheet")
     return (
-      <View accessibilityLabel={title}>
+      <View accessibilityLabel={heading}>
         {headerNode}
-        <View style={{ paddingHorizontal: 20, paddingTop: header === null ? 8 : 16, paddingBottom: 20, gap: 18 }}>
+        <View
+          style={{
+            paddingHorizontal: 20,
+            paddingTop: header === null ? 8 : 16,
+            paddingBottom: 20,
+            gap: 18,
+          }}
+        >
           <ErrorBanner />
           {body}
         </View>
@@ -709,7 +905,7 @@ function WidgetBody({
 
   return (
     <View
-      accessibilityLabel={title}
+      accessibilityLabel={heading}
       style={{
         backgroundColor: theme.background,
         borderRadius: theme.radius,
@@ -736,8 +932,7 @@ function WidgetBody({
 
 /** All-in-one phone. For shared lines and custom layouts, use PhoneProvider + PhoneWidget. */
 export interface SipPhoneProps
-  extends Omit<PhoneProviderProps, "children">,
-    PhoneWidgetProps {}
+  extends Omit<PhoneProviderProps, "children">, PhoneWidgetProps {}
 
 export function SipPhone({
   config,

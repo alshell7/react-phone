@@ -32,8 +32,10 @@ describe("SIP input validation", () => {
     "ws://[::1]:8088/ws",
     "wss://voice.example.com:8089/ws",
     "WSS://Voice.Example.com/ws?transport=ws",
-  ])("allows %p (secure, or local development including the Android emulator host)", (websocketUrl) =>
-    expect(() => validateConfig({ ...config, websocketUrl })).not.toThrow(),
+  ])(
+    "allows %p (secure, or local development including the Android emulator host)",
+    (websocketUrl) =>
+      expect(() => validateConfig({ ...config, websocketUrl })).not.toThrow(),
   );
   it.each([
     "1001",
@@ -44,20 +46,28 @@ describe("SIP input validation", () => {
     expect(() => validateConfig({ ...config, uri })).toThrow(),
   );
   it("requires a password", () =>
-    expect(() => validateConfig({ ...config, password: "" })).toThrow("password"));
+    expect(() => validateConfig({ ...config, password: "" })).toThrow(
+      "password",
+    ));
   it("rejects header injection in the authentication username", () =>
     expect(() =>
       validateConfig({ ...config, authorizationUsername: "user\r\nVia: x" }),
     ).toThrow());
-  it.each([0, -1, NaN, Infinity])("rejects a non-positive timeout %p", (registrationTimeoutMs) =>
-    expect(() => validateConfig({ ...config, registrationTimeoutMs })).toThrow("positive"),
+  it.each([0, -1, NaN, Infinity])(
+    "rejects a non-positive timeout %p",
+    (registrationTimeoutMs) =>
+      expect(() =>
+        validateConfig({ ...config, registrationTimeoutMs }),
+      ).toThrow("positive"),
   );
   it("normalizes formatted international numbers", () =>
     expect(normalizeTarget("+1 (415) 555-0123", config.uri)).toBe(
       "sip:+14155550123@voice.example.com",
     ));
   it("preserves PBX feature codes safely", () =>
-    expect(normalizeTarget("*72#", config.uri)).toBe("sip:*72%23@voice.example.com"));
+    expect(normalizeTarget("*72#", config.uri)).toBe(
+      "sip:*72%23@voice.example.com",
+    ));
   it("accepts explicit SIP targets", () =>
     expect(normalizeTarget("sip:support@example.com", config.uri)).toBe(
       "sip:support@example.com",
@@ -84,11 +94,15 @@ describe("formatting and identifiers", () => {
     [3661, "1:01:01"],
     [-5, "00:00"],
     [NaN, "00:00"],
-  ])("formats %p seconds as %p", (seconds, text) => expect(formatDuration(seconds)).toBe(text));
+  ])("formats %p seconds as %p", (seconds, text) =>
+    expect(formatDuration(seconds)).toBe(text),
+  );
   it("creates RFC 4122 version 4 identifiers without crypto.randomUUID", () => {
     const ids = new Set(Array.from({ length: 500 }, () => createId()));
     expect(ids.size).toBe(500);
     for (const id of ids)
-      expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      expect(id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
   });
 });

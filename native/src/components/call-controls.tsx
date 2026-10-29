@@ -14,7 +14,9 @@ import {
 } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.tsx";
 import { usePhoneMotion } from "./motion.tsx";
-import { usePhoneTheme, withAlpha } from "./theme.tsx";
+import { controlRadius, usePhoneTheme, withAlpha } from "./theme.tsx";
+import { usePhoneLabels } from "./locale.tsx";
+import type { CallInfo } from "../core/types.ts";
 import {
   Appear,
   Button,
@@ -23,16 +25,12 @@ import {
   PhoneText,
   PulseRings,
   RoundButton,
+  type PhoneIcon,
 } from "./primitives.tsx";
 import { action } from "./status.tsx";
 
 export type CallControl =
-  | "mute"
-  | "keypad"
-  | "speaker"
-  | "hold"
-  | "transfer"
-  | "hangup";
+  "mute" | "keypad" | "speaker" | "hold" | "transfer" | "hangup";
 export const defaultCallControls: readonly CallControl[] = [
   "mute",
   "keypad",
@@ -42,8 +40,23 @@ export const defaultCallControls: readonly CallControl[] = [
   "hangup",
 ];
 
+/** Your own in-call button, shown in the control grid (for example Notes or Record). */
+export interface PhoneCustomControl {
+  /** Unique key; list it in `controls` to position it among the built-in buttons. */
+  key: string;
+  label: string;
+  icon: PhoneIcon;
+  onPress: (call: CallInfo | null) => void;
+  /** Render as an active toggle. */
+  selected?: boolean;
+  disabled?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+}
+
 export interface SlideToAnswerProps {
   onAnswer: () => void;
+  /** Defaults to the localized "slide to answer". */
   label?: string;
   disabled?: boolean;
 }
@@ -51,10 +64,11 @@ export interface SlideToAnswerProps {
 /** iOS-style slide-to-answer track. Screen readers get a direct "Answer" action. */
 export function SlideToAnswer({
   onAnswer,
-  label = "slide to answer",
+  label,
   disabled,
 }: SlideToAnswerProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const [width, setWidth] = useState(0);
   const thumb = 60;
@@ -68,8 +82,18 @@ export function SlideToAnswer({
     if (!motion.enabled) return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(shimmer, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(shimmer, { toValue: 0.45, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmer, {
+          toValue: 0.45,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
       ]),
     );
     loop.start();
@@ -78,7 +102,8 @@ export function SlideToAnswer({
   const responder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !latest.current.disabled,
-      onMoveShouldSetPanResponder: (_, g) => !latest.current.disabled && Math.abs(g.dx) > 4,
+      onMoveShouldSetPanResponder: (_, g) =>
+        !latest.current.disabled && Math.abs(g.dx) > 4,
       onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_, g) => {
         x.setValue(Math.max(0, Math.min(latest.current.max, g.dx)));
@@ -87,11 +112,17 @@ export function SlideToAnswer({
         const { max: limit } = latest.current;
         if (limit > 0 && (g.dx > limit * 0.78 || g.vx > 1.2) && !done.current) {
           done.current = true;
-          Animated.timing(x, { toValue: limit, duration: 120, useNativeDriver: true }).start(() =>
-            latest.current.onAnswer(),
-          );
+          Animated.timing(x, {
+            toValue: limit,
+            duration: 120,
+            useNativeDriver: true,
+          }).start(() => latest.current.onAnswer());
         } else {
-          Animated.spring(x, { toValue: 0, useNativeDriver: true, bounciness: 8 }).start();
+          Animated.spring(x, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 8,
+          }).start();
         }
       },
     }),
@@ -100,16 +131,19 @@ export function SlideToAnswer({
     <View
       accessible
       accessibilityRole="button"
-      accessibilityLabel="Answer call"
-      accessibilityHint="Slide right to answer"
-      accessibilityActions={[{ name: "activate", label: "Answer" }]}
+      accessibilityLabel={labels.answerCall}
+      accessibilityHint={labels.slideToAnswerHint}
+      accessibilityActions={[{ name: "activate", label: labels.answer }]}
       onAccessibilityAction={() => onAnswer()}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={{
         alignSelf: "stretch",
         height: thumb + 8,
         borderRadius: (thumb + 8) / 2,
-        backgroundColor: withAlpha(theme.foreground, theme.appearance === "dark" ? 0.14 : 0.07),
+        backgroundColor: withAlpha(
+          theme.foreground,
+          theme.appearance === "dark" ? 0.14 : 0.07,
+        ),
         justifyContent: "center",
         padding: 4,
         opacity: disabled ? 0.5 : 1,
@@ -124,12 +158,16 @@ export function SlideToAnswer({
           alignItems: "center",
           opacity: Animated.multiply(
             shimmer,
-            x.interpolate({ inputRange: [0, Math.max(1, max * 0.6)], outputRange: [1, 0], extrapolate: "clamp" }),
+            x.interpolate({
+              inputRange: [0, Math.max(1, max * 0.6)],
+              outputRange: [1, 0],
+              extrapolate: "clamp",
+            }),
           ),
         }}
       >
         <PhoneText size={17} weight="500" color={theme.foreground}>
-          {label}
+          {label ?? labels.slideToAnswer}
         </PhoneText>
       </Animated.View>
       <Animated.View
@@ -138,14 +176,19 @@ export function SlideToAnswer({
         style={{
           width: thumb,
           height: thumb,
-          borderRadius: thumb / 2,
-          backgroundColor: theme.accent,
+          borderRadius: controlRadius(theme, thumb),
+          backgroundColor: theme.answer,
           alignItems: "center",
           justifyContent: "center",
           transform: [{ translateX: x }],
         }}
       >
-        <Phone size={26} color={theme.accentForeground} fill={theme.accentForeground} strokeWidth={1.5} />
+        <Phone
+          size={26}
+          color={theme.answerForeground}
+          fill={theme.answerForeground}
+          strokeWidth={1.5}
+        />
       </Animated.View>
     </View>
   );
@@ -167,6 +210,7 @@ export function IncomingCallActions({
 }: IncomingCallActionsProps): ReactElement {
   const { client } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   if (answerStyle === "slide")
     return (
       <View style={{ alignSelf: "stretch", gap: 18, alignItems: "center" }}>
@@ -175,35 +219,56 @@ export function IncomingCallActions({
           icon={PhoneOff}
           tone="danger"
           size={56}
-          label="Decline"
+          label={labels.decline}
           labelColor={labelColor}
-          accessibilityLabel="Decline"
+          accessibilityLabel={labels.decline}
           onPress={() => client.hangup()}
         />
       </View>
     );
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-evenly", alignSelf: "stretch" }}>
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-evenly",
+        alignSelf: "stretch",
+      }}
+    >
       <RoundButton
         icon={PhoneOff}
         tone="danger"
         size={size}
-        label="Decline"
+        label={labels.decline}
         labelColor={labelColor}
-        accessibilityLabel="Decline"
+        accessibilityLabel={labels.decline}
         onPress={() => client.hangup()}
       />
       <View style={{ alignItems: "center" }}>
-        <View style={{ position: "absolute", top: 0, width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-          <PulseRings size={size} color={theme.accent} active rings={2} spread={1.45} />
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            width: size,
+            height: size,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <PulseRings
+            size={size}
+            color={theme.answer}
+            active
+            rings={2}
+            spread={1.45}
+          />
         </View>
         <RoundButton
           icon={Phone}
-          tone="accent"
+          tone="answer"
           size={size}
-          label="Answer"
+          label={labels.answer}
           labelColor={labelColor}
-          accessibilityLabel="Answer"
+          accessibilityLabel={labels.answer}
           onPress={() => action(() => client.answer())}
         />
       </View>
@@ -212,8 +277,13 @@ export function IncomingCallActions({
 }
 
 export interface CallControlsProps {
-  /** Utility buttons follow this order. Hangup occupies its own final row. */
-  buttons?: readonly CallControl[];
+  /**
+   * Utility buttons follow this order. Hangup occupies its own final row. Include the
+   * `key` of a custom control to position it; unlisted custom controls go last.
+   */
+  buttons?: readonly (CallControl | (string & {}))[];
+  /** Your own in-call buttons (Notes, Record, Add to CRM, …). */
+  extraControls?: readonly PhoneCustomControl[];
   showMute?: boolean;
   showHold?: boolean;
   showTransfer?: boolean;
@@ -225,15 +295,22 @@ export interface CallControlsProps {
   answerStyle?: "buttons" | "slide";
   /** Diameter of utility buttons; defaults to 64. */
   buttonSize?: number;
+  /** Buttons per row; defaults to 3. */
+  columns?: number;
   /** Caption colour for immersive backgrounds. */
   labelColor?: string;
   /** Neutral (`surface`) or translucent `glass` utility buttons. */
   tone?: "neutral" | "glass";
+  /** Hide captions under the round buttons (icons keep accessible names). */
+  showLabels?: boolean;
 }
+
+const BUILT_IN: readonly string[] = defaultCallControls;
 
 /** Composable controls. Incoming answer/decline stay available in every preset. */
 export function CallControls({
   buttons = defaultCallControls,
+  extraControls = [],
   showMute = true,
   showHold = true,
   showTransfer = true,
@@ -243,15 +320,31 @@ export function CallControls({
   keypadOpen,
   answerStyle,
   buttonSize = 64,
+  columns = 3,
   labelColor,
   tone = "neutral",
+  showLabels = true,
 }: CallControlsProps): ReactElement | null {
   const { state, client } = usePhone();
+  const labels = usePhoneLabels();
   const [transferOpen, setTransferOpen] = useState(false);
   const connected = ["active", "held"].includes(state.status);
-  const outgoing = ["requesting-microphone", "dialing", "ringing"].includes(state.status);
+  const outgoing = ["requesting-microphone", "dialing", "ringing"].includes(
+    state.status,
+  );
   const speakerAvailable = showSpeaker && client.capabilities.speaker;
-  const available = Array.from(new Set(buttons)).filter((button) =>
+  const custom = new Map(
+    extraControls.map((control) => [control.key, control]),
+  );
+  const ordered = Array.from(
+    new Set([
+      ...buttons,
+      ...extraControls
+        .map((control) => control.key)
+        .filter((key) => !buttons.includes(key)),
+    ]),
+  );
+  const available = ordered.filter((button) =>
     button === "mute"
       ? showMute
       : button === "hold"
@@ -262,7 +355,7 @@ export function CallControls({
             ? showKeypad && Boolean(onKeypadToggle)
             : button === "speaker"
               ? speakerAvailable
-              : true,
+              : button === "hangup" || custom.has(button),
   );
   const transferAvailable = available.includes("transfer");
   useEffect(() => {
@@ -270,26 +363,47 @@ export function CallControls({
   }, [connected, transferAvailable]);
   if (["idle", "ended"].includes(state.status)) return null;
   if (state.status === "incoming")
-    return <IncomingCallActions answerStyle={answerStyle} labelColor={labelColor} />;
+    return (
+      <IncomingCallActions answerStyle={answerStyle} labelColor={labelColor} />
+    );
   // Speaker is useful while the other side is still ringing; the rest need media.
   const utilities = available.filter(
-    (button) => button !== "hangup" && (connected || (outgoing && button === "speaker")),
+    (button) =>
+      button !== "hangup" && (connected || (outgoing && button === "speaker")),
   );
   if (!available.length) return null;
-  const rows: CallControl[][] = [];
-  for (let i = 0; i < utilities.length; i += 3) rows.push(utilities.slice(i, i + 3));
-  const render = (button: CallControl) => {
+  const perRow = Math.max(1, Math.min(5, Math.round(columns) || 3));
+  const rows: string[][] = [];
+  for (let i = 0; i < utilities.length; i += perRow)
+    rows.push(utilities.slice(i, i + perRow));
+  const caption = (text: string) => (showLabels ? text : undefined);
+  const common = { tone, size: buttonSize, labelColor } as const;
+  const render = (button: string) => {
+    const own = custom.get(button);
+    if (own && !BUILT_IN.includes(button))
+      return (
+        <RoundButton
+          key={button}
+          {...common}
+          icon={own.icon}
+          label={caption(own.label)}
+          accessibilityLabel={own.accessibilityLabel ?? own.label}
+          accessibilityHint={own.accessibilityHint}
+          selected={own.selected}
+          disabled={own.disabled}
+          testID={`control-${button}`}
+          onPress={() => own.onPress(state.call)}
+        />
+      );
     if (button === "mute")
       return (
         <RoundButton
           key={button}
+          {...common}
           icon={state.muted ? MicOff : Mic}
-          label={state.muted ? "Unmute" : "Mute"}
-          accessibilityLabel={state.muted ? "Unmute" : "Mute"}
+          label={caption(state.muted ? labels.unmute : labels.mute)}
+          accessibilityLabel={state.muted ? labels.unmute : labels.mute}
           selected={state.muted}
-          tone={tone}
-          size={buttonSize}
-          labelColor={labelColor}
           onPress={() => client.setMuted(!state.muted)}
         />
       );
@@ -297,14 +411,12 @@ export function CallControls({
       return (
         <RoundButton
           key={button}
+          {...common}
           icon={Grid3x3}
-          label="Keypad"
-          accessibilityLabel={keypadOpen ? "Hide keypad" : "Keypad"}
+          label={caption(labels.keypad)}
+          accessibilityLabel={keypadOpen ? labels.hideKeypad : labels.keypad}
           expanded={Boolean(keypadOpen)}
           selected={Boolean(keypadOpen)}
-          tone={tone}
-          size={buttonSize}
-          labelColor={labelColor}
           onPress={onKeypadToggle}
         />
       );
@@ -312,13 +424,11 @@ export function CallControls({
       return (
         <RoundButton
           key={button}
+          {...common}
           icon={Volume2}
-          label="Speaker"
-          accessibilityLabel="Speaker"
+          label={caption(labels.speaker)}
+          accessibilityLabel={labels.speaker}
           selected={state.speaker}
-          tone={tone}
-          size={buttonSize}
-          labelColor={labelColor}
           onPress={() => action(() => client.setSpeaker(!state.speaker))}
         />
       );
@@ -326,28 +436,26 @@ export function CallControls({
       return (
         <RoundButton
           key={button}
+          {...common}
           icon={state.status === "held" ? Play : Pause}
-          label={state.status === "held" ? "Resume" : "Hold"}
-          accessibilityLabel={state.status === "held" ? "Resume" : "Hold"}
+          label={caption(state.status === "held" ? labels.resume : labels.hold)}
+          accessibilityLabel={
+            state.status === "held" ? labels.resume : labels.hold
+          }
           selected={state.status === "held"}
           disabled={state.transferPending}
-          tone={tone}
-          size={buttonSize}
-          labelColor={labelColor}
           onPress={() => action(() => client.setHeld(state.status !== "held"))}
         />
       );
     return (
       <RoundButton
         key={button}
+        {...common}
         icon={ArrowRightLeft}
-        label="Transfer"
-        accessibilityLabel="Transfer"
+        label={caption(labels.transfer)}
+        accessibilityLabel={labels.transfer}
         expanded={transferOpen}
         selected={transferOpen}
-        tone={tone}
-        size={buttonSize}
-        labelColor={labelColor}
         onPress={() => setTransferOpen(!transferOpen)}
       />
     );
@@ -362,7 +470,11 @@ export function CallControls({
         rows.map((row, i) => (
           <View
             key={i}
-            style={{ flexDirection: "row", justifyContent: "space-evenly", alignSelf: "stretch" }}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              alignSelf: "stretch",
+            }}
           >
             {row.map(render)}
           </View>
@@ -373,7 +485,7 @@ export function CallControls({
           icon={PhoneOff}
           tone="danger"
           size={Math.max(64, buttonSize + 8)}
-          accessibilityLabel={connected ? "End call" : "Cancel call"}
+          accessibilityLabel={connected ? labels.endCall : labels.cancelCall}
           onPress={() => client.hangup()}
           testID="hangup"
         />
@@ -390,10 +502,13 @@ export function TransferPanel({
 }): ReactElement {
   const { state, client } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [target, setTarget] = useState("");
   const submit = () => action(() => client.transfer(target));
   const disabled =
-    !target.trim() || state.transferPending || !["active", "held"].includes(state.status);
+    !target.trim() ||
+    state.transferPending ||
+    !["active", "held"].includes(state.status);
   return (
     <View
       style={{
@@ -407,21 +522,25 @@ export function TransferPanel({
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ flex: 1, gap: 2 }}>
           <PhoneText size={17} weight="600" accessibilityRole="header">
-            Transfer call
+            {labels.transferTitle}
           </PhoneText>
           <PhoneText size={13} color={theme.muted}>
-            Send this call directly to another number.
+            {labels.transferHint}
           </PhoneText>
         </View>
         {onClose ? (
-          <IconButton icon={X} accessibilityLabel="Close transfer" onPress={onClose} />
+          <IconButton
+            icon={X}
+            accessibilityLabel={labels.closeTransfer}
+            onPress={onClose}
+          />
         ) : null}
       </View>
       <Field
-        label="Destination"
+        label={labels.destination}
         value={target}
         onChangeText={setTarget}
-        placeholder="Extension or SIP address"
+        placeholder={labels.destinationPlaceholder}
         keyboardType="phone-pad"
         autoCapitalize="none"
         autoCorrect={false}
@@ -431,7 +550,7 @@ export function TransferPanel({
         autoFocus
       />
       <Button
-        label={state.transferPending ? "Transferring…" : "Transfer"}
+        label={state.transferPending ? labels.transferring : labels.transfer}
         icon={ArrowRightLeft}
         disabled={disabled}
         onPress={submit}

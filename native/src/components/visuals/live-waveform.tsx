@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactElement } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import { usePhoneMotion } from "../motion.tsx";
 import { usePhoneTheme } from "../theme.tsx";
+import { usePhoneLabels } from "../locale.tsx";
 
 export interface LiveWaveformProps {
   /** Read live levels from `getLevel` / `level`. */
@@ -35,7 +36,8 @@ export interface LiveWaveformProps {
   testID?: string;
 }
 
-const clamp = (n: number) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
+const clamp = (n: number) =>
+  Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0;
 
 /**
  * Live Waveform inspired by ElevenLabs UI. Native platforms have no audio analyser,
@@ -60,13 +62,17 @@ export function LiveWaveform({
   historySize = 60,
   updateRate = 50,
   style,
-  accessibilityLabel = "Call audio waveform",
+  accessibilityLabel,
   testID,
 }: LiveWaveformProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const motion = usePhoneMotion();
   const moving = animate && motion.enabled;
-  const barWidth = Math.max(1, Number.isFinite(requestedWidth) ? requestedWidth : 3);
+  const barWidth = Math.max(
+    1,
+    Number.isFinite(requestedWidth) ? requestedWidth : 3,
+  );
   const barGap = Math.max(0, Number.isFinite(requestedGap) ? requestedGap : 2);
   const [width, setWidth] = useState(0);
   const count = Math.max(1, Math.floor((width + barGap) / (barWidth + barGap)));
@@ -83,19 +89,27 @@ export function LiveWaveform({
     }
     const sample = () => {
       const t = Date.now() / 1000;
-      const raw = processing && !active
-        ? 0.22 + 0.18 * Math.sin(t * 3.1) * Math.sin(t * 1.3)
-        : (source.current.getLevel?.() ?? source.current.level ?? 0);
+      const raw =
+        processing && !active
+          ? 0.22 + 0.18 * Math.sin(t * 3.1) * Math.sin(t * 1.3)
+          : (source.current.getLevel?.() ?? source.current.level ?? 0);
       const value = clamp(raw * Math.max(0.1, sensitivity));
       if (mode === "scrolling") {
-        history.current = [...history.current, value].slice(-Math.max(8, historySize));
+        history.current = [...history.current, value].slice(
+          -Math.max(8, historySize),
+        );
         setValues(history.current);
       } else {
         setValues(
           Array.from({ length: count }, (_, i) => {
             const x = count === 1 ? 0 : Math.abs(i / (count - 1) - 0.5) * 2;
             const envelope = 1 - x * x * 0.75;
-            const jitter = 0.55 + 0.45 * Math.abs(Math.sin(t * 6.3 + i * 0.9) * Math.cos(t * 2.2 + i * 0.37));
+            const jitter =
+              0.55 +
+              0.45 *
+                Math.abs(
+                  Math.sin(t * 6.3 + i * 0.9) * Math.cos(t * 2.2 + i * 0.37),
+                );
             return clamp(value * envelope * jitter * 1.4);
           }),
         );
@@ -104,18 +118,30 @@ export function LiveWaveform({
     sample();
     const timer = setInterval(sample, Math.max(33, updateRate));
     return () => clearInterval(timer);
-  }, [live, active, processing, mode, count, sensitivity, historySize, updateRate]);
+  }, [
+    live,
+    active,
+    processing,
+    mode,
+    count,
+    sensitivity,
+    historySize,
+    updateRate,
+  ]);
   const color = barColor ?? theme.accent;
   const bars =
     mode === "scrolling"
-      ? Array.from({ length: count }, (_, i) => values[values.length - count + i] ?? 0)
+      ? Array.from(
+          { length: count },
+          (_, i) => values[values.length - count + i] ?? 0,
+        )
       : Array.from({ length: count }, (_, i) => values[i] ?? 0);
   return (
     <View
       testID={testID}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel ?? labels.callAudioWaveform}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={[
         {
@@ -132,7 +158,10 @@ export function LiveWaveform({
       {width > 0 &&
         bars.map((value, i) => {
           const edge = Math.min(i, count - 1 - i) * (barWidth + barGap);
-          const fade = fadeEdges && fadeWidth > 0 ? Math.min(1, (edge + barWidth) / fadeWidth) : 1;
+          const fade =
+            fadeEdges && fadeWidth > 0
+              ? Math.min(1, (edge + barWidth) / fadeWidth)
+              : 1;
           return (
             <View
               key={i}

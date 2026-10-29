@@ -4,6 +4,7 @@ import { ChevronRight, Settings, Volume2, X } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.tsx";
 import { formatDuration } from "../core/validation.ts";
 import { usePhoneTheme } from "./theme.tsx";
+import { usePhoneLabels } from "./locale.tsx";
 import {
   Appear,
   IconButton,
@@ -36,12 +37,13 @@ export function ConnectionStatus({
 }: ConnectionStatusProps): ReactElement {
   const { state, preview } = usePhone();
   const theme = usePhoneTheme();
+  const text = usePhoneLabels();
   const labels = {
-    disconnected: "Not connected",
-    connecting: "Connecting",
-    registered: preview ? "Preview mode" : "Ready for calls",
-    reconnecting: "Reconnecting",
-    error: "Connection failed",
+    disconnected: text.notConnected,
+    connecting: text.connecting,
+    registered: preview ? text.previewMode : text.readyForCalls,
+    reconnecting: text.reconnecting,
+    error: text.connectionFailed,
   };
   const tint =
     state.connection === "registered"
@@ -61,7 +63,12 @@ export function ConnectionStatus({
     >
       <StatusDot color={tint} pulsing={pending} />
       {!compact && (
-        <PhoneText size={12} weight="600" color={color ?? tint} numberOfLines={1}>
+        <PhoneText
+          size={12}
+          weight="600"
+          color={color ?? tint}
+          numberOfLines={1}
+        >
           {labels[state.connection]}
         </PhoneText>
       )}
@@ -79,6 +86,7 @@ export function CallTimer({
 }): ReactElement {
   const { state } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [, tick] = useState(0);
   const answeredAt = state.call?.answeredAt;
   const endedAt = state.call?.endedAt;
@@ -87,14 +95,16 @@ export function CallTimer({
     const timer = setInterval(() => tick((n) => n + 1), 1000);
     return () => clearInterval(timer);
   }, [answeredAt, endedAt]);
-  const seconds = answeredAt ? ((endedAt ?? Date.now()) - answeredAt) / 1000 : 0;
+  const seconds = answeredAt
+    ? ((endedAt ?? Date.now()) - answeredAt) / 1000
+    : 0;
   const text = formatDuration(seconds);
   return (
     <PhoneText
       size={size}
       weight="500"
       color={color ?? theme.muted}
-      accessibilityLabel={`Call duration ${text}`}
+      accessibilityLabel={labels.callDuration(text)}
       style={{ fontVariant: ["tabular-nums"] }}
     >
       {text}
@@ -128,7 +138,12 @@ function Notice({
       }}
     >
       <Icon size={18} color={theme.accent} strokeWidth={2} />
-      <PhoneText size={14} weight="600" color={theme.accent} style={{ flex: 1 }}>
+      <PhoneText
+        size={14}
+        weight="600"
+        color={theme.accent}
+        style={{ flex: 1 }}
+      >
         {label}
       </PhoneText>
       <ChevronRight size={16} color={theme.accent} strokeWidth={2} />
@@ -140,6 +155,7 @@ function Notice({
 export function ErrorBanner(): ReactElement | null {
   const { state, client } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const message = state.error?.message;
   useEffect(() => {
     // iOS does not announce role="alert" on its own.
@@ -179,7 +195,7 @@ export function ErrorBanner(): ReactElement | null {
               icon={X}
               size={17}
               color={theme.danger}
-              accessibilityLabel="Dismiss error"
+              accessibilityLabel={labels.dismissError}
               onPress={() => client.clearError()}
             />
           </View>
@@ -188,14 +204,14 @@ export function ErrorBanner(): ReactElement | null {
       {blocked ? (
         <Notice
           icon={Settings}
-          label="Open Settings"
+          label={labels.openSettings}
           onPress={() => action(() => client.openSettings())}
         />
       ) : null}
       {state.playbackBlocked ? (
         <Notice
           icon={Volume2}
-          label="Enable call audio"
+          label={labels.enableCallAudio}
           onPress={() => action(() => client.playAudio())}
         />
       ) : null}

@@ -44,14 +44,31 @@ description: Full-screen, card, and sheet phones; presets, features, controls, k
 | `waveform`       | ✓       | ✓                    | –         | Default visual when `visualization.type` is not set                   |
 | `audioSettings`  | ✓       | ✓                    | –         | Microphone access, device choice (web), volume                        |
 
-Override any feature: `features={{ transfer: false, recents: true }}`. Choose and order in-call buttons with `controls={["mute", "speaker", "keypad", "hangup"]}`; hangup always sits on its own row.
+Override any feature: `features={{ transfer: false, recents: true }}`. Choose and order in-call buttons with `controls={["mute", "speaker", "keypad", "hangup"]}`; hangup always sits on its own row. `controls` only shapes the in-call grid; the idle keypad follows `features.keypad`.
+
+## Your own in-call buttons
+
+```tsx
+import { NotebookPen, Disc } from "lucide-react-native";
+
+<SipPhone
+  controls={["mute", "notes", "speaker", "record", "hold", "hangup"]}
+  extraControls={[
+    { key: "notes", label: "Notes", icon: NotebookPen, onPress: (call) => openNotes(call?.caller) },
+    { key: "record", label: recording ? "Recording" : "Record", icon: Disc, selected: recording, onPress: toggleRecording },
+  ]}
+/>
+```
+
+Custom buttons share the round style, toggle state (`selected`), `disabled`, accessibility, and theme. List their `key` in `controls` to position them; unlisted ones go last. `controlLabels={false}` hides captions under all buttons (names stay accessible), and `CallControls` accepts `columns` for denser grids.
 
 ## Keypad
 
 - Keys register on **touch-down** with a DTMF tone and haptic tick, like a hardware phone.
 - Long-press **0** for `+`; long-press **delete** to clear. The display shrinks as the number grows and accepts pasted SIP addresses.
 - During a call, **Keypad** swaps the control grid for the keypad; keys send DTMF and the display shows digits sent. **Hide** returns.
-- Keys size themselves to the screen height, so short phones (iPhone SE) fit without scrolling.
+- Keys size themselves to the height the phone actually has (full screen, split view, sheet), so short phones fit without scrolling and the keypad stays 3×4.
+- Contact suggestions and speed dial are covered in [Contacts & speed dial](/react-phone/native/contacts/).
 
 ## Incoming calls
 
@@ -72,3 +89,5 @@ With `features.recents`, the idle phone shows **Keypad / Recents** tabs. Recents
 | `branding`                   | `{ name, href }` "Powered by" line; non-HTTP links render as text      |
 | `draggable`                  | Card only: `true` or `{ bounds: "window", margin, position, onPositionChange }` |
 | `immersive`                  | Screen only: tinted call background (default `true`)                   |
+| `contacts`, `searchContacts`, `suggestions`, `speedDial`, `keypadLetters` | Keypad suggestions and shortcuts; see [Contacts & speed dial](/react-phone/native/contacts/) |
+| `labels`, `formatNumber`     | Wording/translation and number display; see [Themes, identity & motion](/react-phone/native/customization/) |

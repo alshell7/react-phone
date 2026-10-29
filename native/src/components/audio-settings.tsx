@@ -10,6 +10,7 @@ import {
 } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.tsx";
 import { usePhoneTheme } from "./theme.tsx";
+import { usePhoneLabels } from "./locale.tsx";
 import {
   Button,
   Divider,
@@ -30,10 +31,11 @@ export interface VolumeSliderProps {
 export function VolumeSlider({
   value,
   onChange,
-  accessibilityLabel = "Call volume",
+  accessibilityLabel,
   step = 0.05,
 }: VolumeSliderProps): ReactElement {
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [width, setWidth] = useState(0);
   const latest = useRef({ width, onChange });
   latest.current = { width, onChange };
@@ -56,22 +58,45 @@ export function VolumeSlider({
     <View
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityValue={{ min: 0, max: 100, now: percent, text: `${percent}%` }}
+      accessibilityLabel={accessibilityLabel ?? labels.callVolume}
+      accessibilityValue={{
+        min: 0,
+        max: 100,
+        now: percent,
+        text: `${percent}%`,
+      }}
       {...(Platform.OS === "web"
-        ? { "aria-valuemin": 0, "aria-valuemax": 100, "aria-valuenow": percent, "aria-valuetext": `${percent}%` }
+        ? {
+            "aria-valuemin": 0,
+            "aria-valuemax": 100,
+            "aria-valuenow": percent,
+            "aria-valuetext": `${percent}%`,
+          }
         : {})}
       accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
       onAccessibilityAction={(event) => {
-        const delta = event.nativeEvent.actionName === "increment" ? step : -step;
-        onChange(Math.max(0, Math.min(1, Math.round((safe + delta) * 100) / 100)));
+        const delta =
+          event.nativeEvent.actionName === "increment" ? step : -step;
+        onChange(
+          Math.max(0, Math.min(1, Math.round((safe + delta) * 100) / 100)),
+        );
       }}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       {...responder.panHandlers}
       style={{ height: 36, justifyContent: "center" }}
     >
-      <View pointerEvents="none" style={{ height: 6, borderRadius: 3, backgroundColor: theme.border }}>
-        <View style={{ width: `${percent}%`, height: 6, borderRadius: 3, backgroundColor: theme.accent }} />
+      <View
+        pointerEvents="none"
+        style={{ height: 6, borderRadius: 3, backgroundColor: theme.border }}
+      >
+        <View
+          style={{
+            width: `${percent}%`,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: theme.accent,
+          }}
+        />
       </View>
       <View
         pointerEvents="none"
@@ -91,13 +116,27 @@ export function VolumeSlider({
   );
 }
 
-function Section({ icon: Icon, title, children }: { icon: PhoneIcon; title: string; children: ReactElement | ReactElement[] | null }) {
+function Section({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: PhoneIcon;
+  title: string;
+  children: ReactElement | ReactElement[] | null;
+}) {
   const theme = usePhoneTheme();
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Icon size={16} color={theme.muted} strokeWidth={2} />
-        <PhoneText size={13} weight="700" color={theme.muted} style={{ letterSpacing: 0.4, textTransform: "uppercase" }} accessibilityRole="header">
+        <PhoneText
+          size={13}
+          weight="700"
+          color={theme.muted}
+          style={{ letterSpacing: 0.4, textTransform: "uppercase" }}
+          accessibilityRole="header"
+        >
           {title}
         </PhoneText>
       </View>
@@ -106,7 +145,17 @@ function Section({ icon: Icon, title, children }: { icon: PhoneIcon; title: stri
   );
 }
 
-function Option({ label, selected, onPress, disabled }: { label: string; selected: boolean; onPress: () => void; disabled?: boolean }) {
+function Option({
+  label,
+  selected,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
   const theme = usePhoneTheme();
   return (
     <PressableScale
@@ -116,9 +165,22 @@ function Option({ label, selected, onPress, disabled }: { label: string; selecte
       accessibilityLabel={label}
       accessibilityState={{ checked: selected }}
       scaleTo={0.98}
-      style={{ flexDirection: "row", alignItems: "center", minHeight: 46, paddingHorizontal: 12, borderRadius: 12, backgroundColor: selected ? theme.accentSoft : "transparent" }}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        minHeight: 46,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: selected ? theme.accentSoft : "transparent",
+      }}
     >
-      <PhoneText size={15} weight={selected ? "600" : "400"} color={selected ? theme.accent : theme.foreground} style={{ flex: 1 }} numberOfLines={1}>
+      <PhoneText
+        size={15}
+        weight={selected ? "600" : "400"}
+        color={selected ? theme.accent : theme.foreground}
+        style={{ flex: 1 }}
+        numberOfLines={1}
+      >
         {label}
       </PhoneText>
       {selected ? <Check size={18} color={theme.accent} /> : null}
@@ -130,8 +192,11 @@ function Option({ label, selected, onPress, disabled }: { label: string; selecte
 export function AudioSettings(): ReactElement {
   const { state, client } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const capabilities = client.capabilities;
-  const [devices, setDevices] = useState<Array<{ deviceId: string; kind: string; label: string }>>([]);
+  const [devices, setDevices] = useState<
+    Array<{ deviceId: string; kind: string; label: string }>
+  >([]);
   const busy = !["idle", "ended"].includes(state.status);
   useEffect(() => {
     if (!capabilities.inputSelection) return;
@@ -152,22 +217,22 @@ export function AudioSettings(): ReactElement {
   const outputs = devices.filter((d) => d.kind === "audiooutput" && d.deviceId);
   const micLabel =
     state.microphone === "requesting"
-      ? "Waiting for permission…"
+      ? labels.waitingForPermission
       : state.microphone === "granted"
-        ? "Microphone ready · test again"
-        : "Check microphone access";
+        ? labels.microphoneReady
+        : labels.checkMicrophone;
   return (
     <View style={{ gap: 20, alignSelf: "stretch" }}>
-      <Section icon={Mic} title="Microphone">
+      <Section icon={Mic} title={labels.microphone}>
         <View style={{ gap: 10 }}>
           <PhoneText size={14} color={theme.muted}>
             {state.microphone === "blocked"
-              ? "Access is turned off in system settings."
+              ? labels.microphoneBlocked
               : state.microphone === "denied"
-                ? "Access was denied. You can allow it and try again."
+                ? labels.microphoneDenied
                 : state.microphone === "granted"
-                  ? "This app can use your microphone during calls."
-                  : "The microphone is used only while you are on a call."}
+                  ? labels.microphoneGranted
+                  : labels.microphoneUnknown}
           </PhoneText>
           <Button
             label={micLabel}
@@ -176,19 +241,36 @@ export function AudioSettings(): ReactElement {
             disabled={busy || state.microphone === "requesting"}
             onPress={() => action(() => client.testMicrophone())}
           />
-          {(state.microphone === "blocked" || state.microphone === "denied") && capabilities.settings ? (
-            <Button label="Open Settings" icon={Settings} tone="ghost" onPress={() => action(() => client.openSettings())} />
+          {(state.microphone === "blocked" || state.microphone === "denied") &&
+          capabilities.settings ? (
+            <Button
+              label={labels.openSettings}
+              icon={Settings}
+              tone="ghost"
+              onPress={() => action(() => client.openSettings())}
+            />
           ) : null}
           {capabilities.inputSelection && inputs.length > 0 ? (
-            <View accessibilityRole="radiogroup" accessibilityLabel="Microphone" style={{ gap: 2 }}>
-              <Option label="System default" selected={!state.inputDeviceId} disabled={busy} onPress={() => action(() => client.setInputDevice(""))} />
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel={labels.microphone}
+              style={{ gap: 2 }}
+            >
+              <Option
+                label={labels.systemDefault}
+                selected={!state.inputDeviceId}
+                disabled={busy}
+                onPress={() => action(() => client.setInputDevice(""))}
+              />
               {inputs.map((device, i) => (
                 <Option
                   key={device.deviceId}
                   label={device.label || `Microphone ${i + 1}`}
                   selected={state.inputDeviceId === device.deviceId}
                   disabled={busy}
-                  onPress={() => action(() => client.setInputDevice(device.deviceId))}
+                  onPress={() =>
+                    action(() => client.setInputDevice(device.deviceId))
+                  }
                 />
               ))}
             </View>
@@ -196,43 +278,65 @@ export function AudioSettings(): ReactElement {
         </View>
       </Section>
       <Divider />
-      <Section icon={Headphones} title="Output">
+      <Section icon={Headphones} title={labels.output}>
         {capabilities.outputSelection && outputs.length > 0 ? (
-          <View accessibilityRole="radiogroup" accessibilityLabel="Speakers" style={{ gap: 2 }}>
-            <Option label="System default" selected={!state.outputDeviceId} onPress={() => action(() => client.setOutputDevice(""))} />
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel={labels.speakers}
+            style={{ gap: 2 }}
+          >
+            <Option
+              label={labels.systemDefault}
+              selected={!state.outputDeviceId}
+              onPress={() => action(() => client.setOutputDevice(""))}
+            />
             {outputs.map((device, i) => (
               <Option
                 key={device.deviceId}
                 label={device.label || `Speaker ${i + 1}`}
                 selected={state.outputDeviceId === device.deviceId}
-                onPress={() => action(() => client.setOutputDevice(device.deviceId))}
+                onPress={() =>
+                  action(() => client.setOutputDevice(device.deviceId))
+                }
               />
             ))}
           </View>
         ) : (
           <PhoneText size={14} color={theme.muted}>
             {capabilities.speaker
-              ? "Use the Speaker button during a call to switch between earpiece and loudspeaker."
+              ? labels.speakerRoutingHint
               : client.platform === "web"
-                ? "Audio plays through your system's default output."
-                : "Audio follows the system route. Add an audio session adapter to enable the Speaker button."}
+                ? labels.webOutputHint
+                : labels.nativeOutputHint}
           </PhoneText>
         )}
       </Section>
       <Divider />
-      <Section icon={Volume2} title="Call volume">
+      <Section icon={Volume2} title={labels.callVolume}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Volume1 size={18} color={theme.muted} />
           <View style={{ flex: 1 }}>
-            <VolumeSlider value={state.volume} onChange={(v) => client.setVolume(v)} />
+            <VolumeSlider
+              value={state.volume}
+              onChange={(v) => client.setVolume(v)}
+            />
           </View>
-          <PhoneText size={14} weight="600" color={theme.muted} style={{ width: 44, textAlign: "right", fontVariant: ["tabular-nums"] }}>
+          <PhoneText
+            size={14}
+            weight="600"
+            color={theme.muted}
+            style={{
+              width: 44,
+              textAlign: "right",
+              fontVariant: ["tabular-nums"],
+            }}
+          >
             {`${Math.round(state.volume * 100)}%`}
           </PhoneText>
         </View>
       </Section>
       <PhoneText size={12} color={theme.muted}>
-        Microphone changes apply to your next call.
+        {labels.nextCallNote}
       </PhoneText>
     </View>
   );

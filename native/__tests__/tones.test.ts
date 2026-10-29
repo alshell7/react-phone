@@ -5,7 +5,11 @@ import {
 } from "../src/core/tones.ts";
 
 class Oscillator {
-  frequency = { value: 0, setValueAtTime: jest.fn(), linearRampToValueAtTime: jest.fn() };
+  frequency = {
+    value: 0,
+    setValueAtTime: jest.fn(),
+    linearRampToValueAtTime: jest.fn(),
+  };
   connect = jest.fn((node: unknown) => node);
   disconnect = jest.fn();
   start = jest.fn();
@@ -33,13 +37,21 @@ class Context {
   }
   createGain() {
     return {
-      gain: { value: 0, setValueAtTime: jest.fn(), linearRampToValueAtTime: jest.fn() },
+      gain: {
+        value: 0,
+        setValueAtTime: jest.fn(),
+        linearRampToValueAtTime: jest.fn(),
+      },
       connect: jest.fn(),
       disconnect: jest.fn(),
     };
   }
 }
-const haptics = () => ({ impact: jest.fn(), startRinging: jest.fn(), stopRinging: jest.fn() });
+const haptics = () => ({
+  impact: jest.fn(),
+  startRinging: jest.fn(),
+  stopRinging: jest.fn(),
+});
 const audioContext = () => new Context();
 
 beforeEach(() => {
@@ -59,11 +71,20 @@ describe("local call tone presets", () => {
       tones.configure({ preset, audioContext });
       tones.unlock();
       const context = Context.instances[0];
-      for (const event of ["incoming", "outgoing", "ringing", "connected", "disconnected"] as const) {
+      for (const event of [
+        "incoming",
+        "outgoing",
+        "ringing",
+        "connected",
+        "disconnected",
+      ] as const) {
         const before = context.oscillators.length;
         expect(tones.start(event)).toBe(true);
         expect(context.oscillators.length - before).toBe(
-          phoneTonePresets[preset][event].steps.reduce((sum, step) => sum + step.frequencies.length, 0),
+          phoneTonePresets[preset][event].steps.reduce(
+            (sum, step) => sum + step.frequencies.length,
+            0,
+          ),
         );
       }
       tones.start("incoming");
@@ -126,7 +147,9 @@ describe("local call tone presets", () => {
     tones.configure({ haptics: true, audioContext });
     tones.unlock();
     tones.start("dtmf", "5");
-    expect(Context.instances[0].oscillators.map((node) => node.frequency.value)).toEqual([770, 1336]);
+    expect(
+      Context.instances[0].oscillators.map((node) => node.frequency.value),
+    ).toEqual([770, 1336]);
     expect(feedback.impact).toHaveBeenCalledWith("light");
     tones.start("connected");
     expect(feedback.impact).toHaveBeenCalledWith("medium");

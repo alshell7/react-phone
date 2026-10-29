@@ -10,7 +10,11 @@ export interface PhoneMediaTrack {
   readonly readyState?: string;
   enabled: boolean;
   stop(): void;
-  addEventListener?(type: "ended", listener: () => void, options?: unknown): void;
+  addEventListener?(
+    type: "ended",
+    listener: () => void,
+    options?: unknown,
+  ): void;
   removeEventListener?(type: "ended", listener: () => void): void;
   /** react-native-webrtc: playback gain for a remote audio track (0–10). */
   _setVolume?(volume: number): void;
@@ -34,7 +38,11 @@ export interface PhoneMediaDevice {
 
 /** Remote call audio. Native WebRTC plays remote tracks automatically. */
 export interface RemoteAudioPlayer {
-  play(stream: PhoneMediaStream, volume: number, outputDeviceId: string): Promise<void>;
+  play(
+    stream: PhoneMediaStream,
+    volume: number,
+    outputDeviceId: string,
+  ): Promise<void>;
   setVolume(volume: number): void;
   setOutputDevice(id: string): Promise<void>;
   stop(): void;
@@ -51,7 +59,10 @@ export interface MediaAdapter {
   prepare(): void;
   /** Ask the OS for microphone access before capture. Optional on platforms that prompt in getUserMedia. */
   requestMicrophonePermission?(): Promise<PermissionResult>;
-  getUserMedia(constraints: { audio: boolean | Record<string, unknown>; video: false }): Promise<PhoneMediaStream>;
+  getUserMedia(constraints: {
+    audio: boolean | Record<string, unknown>;
+    video: false;
+  }): Promise<PhoneMediaStream>;
   createStream(tracks: PhoneMediaTrack[]): PhoneMediaStream;
   createPlayer(): RemoteAudioPlayer;
   enumerateDevices?(): Promise<PhoneMediaDevice[]>;
@@ -87,8 +98,14 @@ export interface HapticsAdapter {
 }
 
 /** Translate platform exceptions without leaking implementation or device details. */
-export function microphoneMessage(error: unknown, platform: MediaAdapter["platform"] = "web"): string {
-  const name = error && typeof error === "object" && "name" in error ? String((error as { name: unknown }).name) : "";
+export function microphoneMessage(
+  error: unknown,
+  platform: MediaAdapter["platform"] = "web",
+): string {
+  const name =
+    error && typeof error === "object" && "name" in error
+      ? String((error as { name: unknown }).name)
+      : "";
   const settings =
     platform === "ios"
       ? "Open Settings, choose this app, and turn on Microphone."
@@ -97,7 +114,11 @@ export function microphoneMessage(error: unknown, platform: MediaAdapter["platfo
         : "Allow the microphone in your browser’s site settings.";
   if (name === "BlockedError")
     return `Microphone access is turned off for this app. ${settings}`;
-  if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError")
+  if (
+    name === "NotAllowedError" ||
+    name === "SecurityError" ||
+    name === "PermissionDeniedError"
+  )
     return `Microphone access was denied. ${settings} Then try again.`;
   if (name === "NotFoundError")
     return "No microphone found. Connect a microphone, then try again.";

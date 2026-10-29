@@ -21,7 +21,7 @@ Targets accept extensions, international numbers with formatting (`+1 (415) 555-
 | ---------------- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
 | Answer / decline | `answer()`, `hangup()`         | Declining responds `486 Busy Here`; a second incoming call is rejected the same way             |
 | Mute             | `setMuted(boolean)`            | Stops sending microphone audio; the Orb and local waveform go quiet                             |
-| Hold             | `setHeld(boolean)`             | SDP re-INVITE; remote hold is reported as `remoteHeld`                                          |
+| Hold             | `setHeld(boolean)`             | SDP re-INVITE; remote hold is reported as `remoteHeld`. A quick Resume while the PBX is still answering the hold is retried until negotiation settles |
 | Speaker          | `setSpeaker(boolean)`          | Needs an [audio session adapter](/react-phone/native/audio/); also available while ringing out   |
 | Keypad           | `sendDTMF("0-9*#A-D")`         | RFC 2833 when the platform has an RTP DTMF sender; otherwise SIP INFO automatically             |
 | Transfer         | `transfer(target)`             | Blind REFER; the call ends only after the PBX reports success, and stays connected on failure   |
@@ -46,7 +46,7 @@ Remote REFER requests are always rejected so a remote party cannot make the phon
 | `dialing` / `ringing`    | INVITE sent / remote is ringing                 |
 | `incoming` / `answering` | Ringing here / acquiring media to answer        |
 | `active` / `held`        | Connected / locally held                        |
-| `ended`                  | Finished; `call.endReason` explains why         |
+| `ended`                  | Finished; `call.endReason` explains why in plain words: "Call ended", "Missed call", "Declined", "Cancelled", "Busy", "No answer", "Number not found", "Connection lost", … (translate with `labels.endReasons`) |
 
 ## Events
 

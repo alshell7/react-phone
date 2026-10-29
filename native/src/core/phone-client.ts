@@ -136,7 +136,8 @@ export class PhoneClient {
   /** Platform features available to controls. */
   get capabilities(): PhoneCapabilities {
     return {
-      speaker: Boolean(this.audioSession?.setSpeaker) || Boolean(this.options.preview),
+      speaker:
+        Boolean(this.audioSession?.setSpeaker) || Boolean(this.options.preview),
       outputSelection: this.media.canSelectOutput,
       inputSelection: Boolean(this.media.enumerateDevices),
       settings: Boolean(this.media.openSettings),
@@ -513,7 +514,10 @@ export class PhoneClient {
               ? "denied"
               : "unavailable",
       });
-      throw this.fail("microphone", microphoneMessage(error, this.media.platform));
+      throw this.fail(
+        "microphone",
+        microphoneMessage(error, this.media.platform),
+      );
     } finally {
       clearTimeout(timer);
     }
@@ -794,7 +798,10 @@ export class PhoneClient {
     this.session = session;
     const current = () => this.session === session;
     const bindPeer = (peer: PeerLike) => {
-      const receive = (track: PhoneMediaTrack, streams?: PhoneMediaStream[]) => {
+      const receive = (
+        track: PhoneMediaTrack,
+        streams?: PhoneMediaStream[],
+      ) => {
         if (!current() || track.kind !== "audio") return;
         let remote = this.snapshot.remoteStream;
         if (!remote) remote = streams?.[0] ?? this.media.createStream([track]);
@@ -804,11 +811,13 @@ export class PhoneClient {
           this.audio.stopRinging();
         void this.playAudio();
       };
-      peer.addEventListener(
-        "track",
-        (({ track, streams }: { track: PhoneMediaTrack; streams?: PhoneMediaStream[] }) =>
-          receive(track, streams)) as never,
-      );
+      peer.addEventListener("track", (({
+        track,
+        streams,
+      }: {
+        track: PhoneMediaTrack;
+        streams?: PhoneMediaStream[];
+      }) => receive(track, streams)) as never);
       try {
         peer.getReceivers().forEach(({ track }) => {
           if (track) receive(track);
@@ -984,7 +993,10 @@ export class PhoneClient {
       try {
         void Promise.resolve(adapter.setSpeaker(enabled)).catch(() => {});
       } catch {
-        throw this.fail("audio", "Could not switch the audio route. Try again.");
+        throw this.fail(
+          "audio",
+          "Could not switch the audio route. Try again.",
+        );
       }
     }
     this.update({ speaker: enabled });
@@ -992,10 +1004,7 @@ export class PhoneClient {
   }
 
   setHeld(held: boolean): void {
-    if (
-      !ACTIVE.includes(this.snapshot.status) ||
-      this.snapshot.transferPending
-    )
+    if (!ACTIVE.includes(this.snapshot.status) || this.snapshot.transferPending)
       return;
     if (this.options.preview) {
       this.update({ status: held ? "held" : "active" });
@@ -1069,10 +1078,7 @@ export class PhoneClient {
 
   /** Blind transfer. Completes only when REFER NOTIFY reports success. */
   transfer(target: string): void {
-    if (
-      !ACTIVE.includes(this.snapshot.status) ||
-      this.snapshot.transferPending
-    )
+    if (!ACTIVE.includes(this.snapshot.status) || this.snapshot.transferPending)
       return;
     let uri: string;
     try {
@@ -1168,11 +1174,14 @@ export class PhoneClient {
     ): number | undefined => {
       const energy = Number(stat.totalAudioEnergy);
       const duration = Number(stat.totalSamplesDuration);
-      if (!Number.isFinite(energy) || !Number.isFinite(duration)) return undefined;
+      if (!Number.isFinite(energy) || !Number.isFinite(duration))
+        return undefined;
       const previous = this.energy[key];
       this.energy[key] = [energy, duration];
       if (!previous || duration <= previous[1]) return undefined;
-      return Math.sqrt(Math.max(0, energy - previous[0]) / (duration - previous[1]));
+      return Math.sqrt(
+        Math.max(0, energy - previous[0]) / (duration - previous[1]),
+      );
     };
     report.forEach((stat) => {
       const kind = stat.kind ?? stat.mediaType;

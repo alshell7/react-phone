@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "../react-types.d.ts";
 import { Animated, Easing, Platform, Pressable, Text, TextInput, View, type AccessibilityRole, type AccessibilityState, type Insets, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from "react-native";
 import { usePhoneMotion } from "./motion.ts";
-import { usePhoneTheme, withAlpha } from "./theme.ts";
+import { controlRadius, usePhoneTheme, withAlpha } from "./theme.ts";
 
 /** Lucide-compatible icon component. */
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
@@ -104,7 +104,7 @@ export function PressableScale({
     children: children
   });
 }
-export type RoundButtonTone = "neutral" | "accent" | "danger" | "danger-soft" | "glass";
+export type RoundButtonTone = "neutral" | "accent" | "answer" | "danger" | "danger-soft" | "glass";
 export interface RoundButtonProps {
   icon: PhoneIcon;
   label?: string;
@@ -143,6 +143,7 @@ export function RoundButton({
   const fills: Record<RoundButtonTone, [string, string]> = {
     neutral: [theme.surface, theme.foreground],
     accent: [theme.accent, theme.accentForeground],
+    answer: [theme.answer, theme.answerForeground],
     danger: [theme.danger, theme.dangerForeground],
     "danger-soft": [theme.dangerSoft, theme.danger],
     glass: [withAlpha(theme.foreground, theme.appearance === "dark" ? 0.14 : 0.07), theme.foreground]
@@ -174,7 +175,7 @@ export function RoundButton({
       style: {
         width: size,
         height: size,
-        borderRadius: size / 2,
+        borderRadius: controlRadius(theme, size),
         backgroundColor: background,
         alignItems: "center",
         justifyContent: "center"

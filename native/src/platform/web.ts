@@ -42,7 +42,11 @@ class WebAudioPlayer implements RemoteAudioPlayer {
     this.element.autoplay = true;
     return this.element;
   }
-  async play(stream: PhoneMediaStream, volume: number, sinkId: string): Promise<void> {
+  async play(
+    stream: PhoneMediaStream,
+    volume: number,
+    sinkId: string,
+  ): Promise<void> {
     const element = this.create();
     if (!element) return;
     element.volume = volume;
@@ -56,7 +60,10 @@ class WebAudioPlayer implements RemoteAudioPlayer {
   async setOutputDevice(id: string): Promise<void> {
     const element = this.create();
     if (!element?.setSinkId) {
-      if (id) throw new Error("Audio output selection is not supported by this browser.");
+      if (id)
+        throw new Error(
+          "Audio output selection is not supported by this browser.",
+        );
       return;
     }
     await element.setSinkId(id);
@@ -91,7 +98,10 @@ export function createWebMediaAdapter(): MediaAdapter {
     createStream: (tracks) =>
       web.MediaStream
         ? new web.MediaStream(tracks)
-        : { getTracks: () => tracks, getAudioTracks: () => tracks.filter((t) => t.kind === "audio") },
+        : {
+            getTracks: () => tracks,
+            getAudioTracks: () => tracks.filter((t) => t.kind === "audio"),
+          },
     createPlayer: () => new WebAudioPlayer(),
     enumerateDevices: async () =>
       (await web.navigator?.mediaDevices?.enumerateDevices?.()) ?? [],
@@ -113,7 +123,8 @@ export function createWebHaptics(): HapticsAdapter {
     }
   };
   return {
-    impact: (kind) => vibrate(kind === "light" ? 8 : kind === "medium" ? 14 : 24),
+    impact: (kind) =>
+      vibrate(kind === "light" ? 8 : kind === "medium" ? 14 : 24),
     startRinging() {
       clearInterval(ringing);
       vibrate([600, 400, 600]);

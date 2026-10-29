@@ -6,6 +6,7 @@ import { ChevronRight, Settings, Volume2, X } from "lucide-react-native";
 import { usePhone } from "../react/phone-provider.ts";
 import { formatDuration } from "../core/validation.ts";
 import { usePhoneTheme } from "./theme.ts";
+import { usePhoneLabels } from "./locale.ts";
 import { Appear, IconButton, PhoneText, PressableScale, StatusDot, type PhoneIcon } from "./primitives.ts";
 
 /** Run an action whose failure is already reported through state.error. */
@@ -34,12 +35,13 @@ export function ConnectionStatus({
     preview
   } = usePhone();
   const theme = usePhoneTheme();
+  const text = usePhoneLabels();
   const labels = {
-    disconnected: "Not connected",
-    connecting: "Connecting",
-    registered: preview ? "Preview mode" : "Ready for calls",
-    reconnecting: "Reconnecting",
-    error: "Connection failed"
+    disconnected: text.notConnected,
+    connecting: text.connecting,
+    registered: preview ? text.previewMode : text.readyForCalls,
+    reconnecting: text.reconnecting,
+    error: text.connectionFailed
   };
   const tint = state.connection === "registered" ? theme.accent : state.connection === "error" ? theme.danger : theme.muted;
   const pending = state.connection === "connecting" || state.connection === "reconnecting";
@@ -78,6 +80,7 @@ export function CallTimer({
     state
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const [, tick] = useState(0);
   const answeredAt = state.call?.answeredAt;
   const endedAt = state.call?.endedAt;
@@ -92,7 +95,7 @@ export function CallTimer({
     size: size,
     weight: "500",
     color: color ?? theme.muted,
-    accessibilityLabel: `Call duration ${text}`,
+    accessibilityLabel: labels.callDuration(text),
     style: {
       fontVariant: ["tabular-nums"]
     },
@@ -149,6 +152,7 @@ export function ErrorBanner(): ReactElement | null {
     client
   } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const message = state.error?.message;
   useEffect(() => {
     // iOS does not announce role="alert" on its own.
@@ -188,17 +192,17 @@ export function ErrorBanner(): ReactElement | null {
           icon: X,
           size: 17,
           color: theme.danger,
-          accessibilityLabel: "Dismiss error",
+          accessibilityLabel: labels.dismissError,
           onPress: () => client.clearError()
         })]
       })
     }) : null, blocked ? /*#__PURE__*/_jsx(Notice, {
       icon: Settings,
-      label: "Open Settings",
+      label: labels.openSettings,
       onPress: () => action(() => client.openSettings())
     }) : null, state.playbackBlocked ? /*#__PURE__*/_jsx(Notice, {
       icon: Volume2,
-      label: "Enable call audio",
+      label: labels.enableCallAudio,
       onPress: () => action(() => client.playAudio())
     }) : null]
   });

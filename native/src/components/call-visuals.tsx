@@ -4,6 +4,7 @@ import { useCallActivity } from "../react/use-call-activity.ts";
 import { usePhone } from "../react/phone-provider.tsx";
 import { usePhoneMotion } from "./motion.tsx";
 import { usePhoneTheme } from "./theme.tsx";
+import { usePhoneLabels } from "./locale.tsx";
 import { PhoneText } from "./primitives.tsx";
 import { Orb, type OrbProps } from "./visuals/orb.tsx";
 import {
@@ -21,7 +22,10 @@ export type CallOrbProps = Omit<
 >;
 
 /** Still before/after a call; listening/talking motion follows real call audio. */
-export function CallOrb({ animate = true, ...props }: CallOrbProps): ReactElement {
+export function CallOrb({
+  animate = true,
+  ...props
+}: CallOrbProps): ReactElement {
   const activity = useCallActivity();
   const motion = usePhoneMotion();
   const latest = useRef(activity);
@@ -37,13 +41,17 @@ export function CallOrb({ animate = true, ...props }: CallOrbProps): ReactElemen
         motion.enabled
       }
       getInputVolume={() => (latest.current.active ? latest.current.input : 0)}
-      getOutputVolume={() => (latest.current.active ? latest.current.output : 0)}
+      getOutputVolume={() =>
+        latest.current.active ? latest.current.output : 0
+      }
     />
   );
 }
 
-export interface CallWaveformProps
-  extends Omit<LiveWaveformProps, "getLevel" | "level" | "active" | "processing"> {
+export interface CallWaveformProps extends Omit<
+  LiveWaveformProps,
+  "getLevel" | "level" | "active" | "processing"
+> {
   /** Defaults to remote audio; choose local to visualize the microphone. */
   source?: "remote" | "local";
   /** Show a caption under the waveform while connected. Defaults to true. */
@@ -58,6 +66,7 @@ export function CallWaveform({
 }: CallWaveformProps): ReactElement {
   const { state, preview } = usePhone();
   const theme = usePhoneTheme();
+  const labels = usePhoneLabels();
   const activity = useCallActivity(4);
   const latest = useRef(activity);
   latest.current = activity;
@@ -78,22 +87,27 @@ export function CallWaveform({
       {showCaption && active ? (
         <PhoneText size={11} weight="500" color={theme.muted}>
           {preview
-            ? "Simulated audio"
+            ? labels.simulatedAudio
             : source === "local"
               ? muted
-                ? "Microphone muted"
-                : "Your microphone"
-              : "Call audio"}
+                ? labels.microphoneMuted
+                : labels.yourMicrophone
+              : labels.callAudio}
         </PhoneText>
       ) : null}
     </View>
   );
 }
 
-export type CallBarVisualizerProps = Omit<BarVisualizerProps, "state" | "bands">;
+export type CallBarVisualizerProps = Omit<
+  BarVisualizerProps,
+  "state" | "bands"
+>;
 
 /** SIP lifecycle + speech energy drive the bar animation state. */
 export function CallBarVisualizer(props: CallBarVisualizerProps): ReactElement {
   const activity = useCallActivity(props.barCount);
-  return <BarVisualizer {...props} state={activity.state} bands={activity.bands} />;
+  return (
+    <BarVisualizer {...props} state={activity.state} bands={activity.bands} />
+  );
 }

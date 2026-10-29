@@ -26,7 +26,7 @@ npm run publish:check    # Stage and dry-run the JSR package
 | SIP wire       | Playwright + local registrar            | Two phones register with digest auth and call each other with real JsSIP and WebRTC: answer, live audio levels, mute, hold/remote hold, DTMF, hangup, rejected passwords, unknown numbers |
 | Live PBX       | Jest (Node WebSocket) / Playwright      | Real REGISTER against your server; with `SIP_TEST_TARGET`, a real call with Chromium's fake microphone      |
 
-Live tests read `native/.env.local` (git-ignored; see `.env.example`) and skip without credentials. The live browser call only runs with `SIP_LIVE=1` (`npm run test:live:call`) so routine runs never touch a real account.
+Live tests read `native/.env.local` (git-ignored; see `.env.example`) or environment variables, and skip without credentials. In GitHub Actions, add `SIP_WSS_URL`, `SIP_URI`, `SIP_USERNAME`, `SIP_PASSWORD`, and `SIP_TEST_TARGET` as repository secrets and run the **React Native** workflow manually (`workflow_dispatch`): its `live` job registers and places a controlled call against your PBX. Pushes and pull requests never use the account. The live browser call only runs with `SIP_LIVE=1` (`npm run test:live:call`) so routine runs never touch a real account.
 
 ## Native builds
 

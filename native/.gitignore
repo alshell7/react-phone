@@ -1,0 +1,12 @@
+node_modules/
+lib/
+coverage/
+example/dist/
+example/ios/
+example/android/
+example/.expo/
+.env*
+!.env.example
+test-results/
+playwright-report/
+.jsr-stage/

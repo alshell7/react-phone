@@ -1,0 +1,26 @@
+{
+  "name": "@azeer-ui-widget/react-native-phone",
+  "version": "0.1.0",
+  "license": "MIT",
+  "nodeModulesDir": "auto",
+  "lock": false,
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
+  "exports": {
+    ".": "./publish/index.ts",
+    "./core": "./publish/core/index.ts"
+  },
+  "publish": {
+    "include": [
+      "publish",
+      "README.md",
+      "CHANGELOG.md",
+      "LICENSE",
+      "package.json",
+      "jsr.json"
+    ]
+  }
+}

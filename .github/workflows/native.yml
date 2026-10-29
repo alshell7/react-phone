@@ -3,6 +3,8 @@ on:
   push:
     paths: ["native/**", "docs/**", ".github/workflows/native.yml"]
   pull_request:
+    # `labeled` lets a maintainer opt a PR into the live PBX job with `live-sip`.
+    types: [opened, synchronize, reopened, labeled]
     paths: ["native/**", "docs/**", ".github/workflows/native.yml"]
   # Manual runs can also exercise a real PBX (see the live job).
   workflow_dispatch:
@@ -10,6 +12,8 @@ permissions:
   contents: read
 jobs:
   check:
+    # Adding a label changes no code, so it only starts the live job.
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,11 +39,14 @@ jobs:
           name: playwright-report
           path: native/test-results
 
-  # Real PBX: registration and a controlled call from the web build. Manual only, so
-  # routine runs never use the account. Add SIP_WSS_URL, SIP_URI, SIP_USERNAME,
-  # SIP_PASSWORD, and SIP_TEST_TARGET as repository secrets; without them it skips.
+  # Real PBX: registration and a controlled call from the web build. Runs only on
+  # manual dispatch or when a maintainer labels the PR `live-sip`, so routine runs
+  # never use the account. Add SIP_WSS_URL, SIP_URI, SIP_USERNAME, SIP_PASSWORD,
+  # and SIP_TEST_TARGET as repository secrets; without them the tests skip.
   live:
-    if: github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'live-sip')
     runs-on: ubuntu-latest
     defaults:
       run:

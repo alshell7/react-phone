@@ -608,3 +608,32 @@ describe("native platform behaviour", () => {
     expect(client.getSnapshot().history).toHaveLength(0);
   });
 });
+
+describe("end reasons", () => {
+  it.each([
+    ["outgoing", "BYE", "Call ended", false],
+    ["outgoing", "Busy", "Busy", true],
+    ["outgoing", "Rejected", "Declined by recipient", false],
+    ["outgoing", "Not Found", "Number not found", true],
+    ["incoming", "Canceled", "Missed call", false],
+    ["outgoing", "Something New", "Call ended", true],
+  ])("maps a %s call ending with %p to %p", async (direction, cause, reason, errors) => {
+    const client = make();
+    await registered(client);
+    let session: Session;
+    if (direction === "incoming") {
+      session = new Session();
+      session.direction = "incoming";
+      ua().emit("newRTCSession", { session });
+    } else {
+      await client.call("7003");
+      session = ua().call.mock.results[0].value as Session;
+    }
+    // A BYE only arrives after the call was answered.
+    if (cause === "BYE") session.emit("accepted");
+    session.emit(cause === "BYE" ? "ended" : "failed", { cause });
+    expect(client.getSnapshot().call?.endReason).toBe(reason);
+    expect(Boolean(client.getSnapshot().error)).toBe(errors);
+    if (errors) expect(client.getSnapshot().error?.message).toContain(reason);
+  });
+});

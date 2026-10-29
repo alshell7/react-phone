@@ -12,6 +12,7 @@ First release of `@azeer-ui-widget/react-native-phone`, the React Native compani
 - RFC 2833 DTMF where an RTP DTMF sender exists, with automatic SIP INFO fallback on react-native-webrtc.
 - Foreground re-registration, bounded reconnection, ICE loss handling, and generation-guarded media cleanup.
 - Audio levels from WebRTC statistics, identical on every platform.
+- Readable end reasons ("Call ended", "Missed call", "Number not found", …) instead of raw SIP causes.
 
 ### Interface
 

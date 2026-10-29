@@ -797,8 +797,24 @@ export class PhoneClient {
     const ended = (cause: string) => {
       if (!current()) return;
       this.session = null;
-      const known = new Set(["Busy", "Rejected", "Canceled", "No Answer", "Unavailable", "Not Found", "Connection Error", "Request Timeout", "Terminated", "BYE"]);
-      const reason = known.has(cause) ? cause : "Call ended";
+      // People read endReason in the UI and Recents; never show raw JsSIP causes.
+      const incoming = session.direction === "incoming";
+      const reasons: Record<string, string> = {
+        BYE: "Call ended",
+        Terminated: "Call ended",
+        Busy: "Busy",
+        Rejected: incoming ? "Declined" : "Declined by recipient",
+        Canceled: incoming ? "Missed call" : "Cancelled",
+        "No Answer": "No answer",
+        Unavailable: "Unavailable",
+        "Not Found": "Number not found",
+        "Address Incomplete": "Incomplete number",
+        "Connection Error": "Connection lost",
+        "Request Timeout": "No response",
+        "Authentication Error": "Not authorized",
+        "SIP Failure Code": "Call failed"
+      };
+      const reason = reasons[cause] ?? "Call ended";
       this.finish(reason);
       if (!this.snapshot.call?.answeredAt && !["Canceled", "Rejected"].includes(cause)) this.fail("call", `Call ended: ${reason}. Check the destination and try again.`);
     };

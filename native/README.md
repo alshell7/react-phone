@@ -138,9 +138,10 @@ Every piece is exported: `Dialer`, `Keypad`, `CallerCard`, `CallControls`, `Inco
 cd native
 npm install
 npm run example            # Expo dev server (press w for web, a for Android, i for iOS)
-npm run check              # publish/ freshness, types, and 136 unit/component tests
-npm run test:e2e           # Playwright on the web playground (desktop + mobile)
+npm run check              # publish/ freshness, types, and 142 unit/component tests
+npm run test:e2e           # Playwright: desktop + mobile UI, and real SIP/WebRTC calls on a local registrar
 npm run test:live          # Real registration against your PBX (.env.local)
+npm run test:live:call     # A real call through your PBX from the web build (opt-in)
 npm run package:build      # Refresh publish/ after editing src/
 ```
 

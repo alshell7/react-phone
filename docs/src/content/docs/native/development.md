@@ -10,8 +10,9 @@ cd native
 npm install
 npm run example          # Expo dev server: w (web), a (Android), i (iOS)
 npm run check            # publish/ freshness, TypeScript, unit + component tests
-npm run test:e2e         # Playwright on the exported web playground
+npm run test:e2e         # Playwright: UI suites + real SIP/WebRTC calls on a local registrar
 npm run test:live        # Real JsSIP registration against your PBX
+npm run test:live:call   # A real call through your PBX from the web build (opt-in)
 npm run publish:check    # Stage and dry-run the JSR package
 ```
 
@@ -22,9 +23,10 @@ npm run publish:check    # Stage and dry-run the JSR package
 | Core           | Jest + mocked JsSIP and media adapters  | Lifecycle races, permission states, DTMF fallback, speaker/audio session, stats levels, tones, validation   |
 | Components     | React Native Testing Library            | Every surface and preset, keypad, incoming, slide-to-answer, transfer, settings, island behaviours, a11y names |
 | Browser        | Playwright (desktop + Pixel 7)          | The real web build: flows, island bounds, theme/preset switching, axe WCAG A/AA, reduced motion, orb motion |
+| SIP wire       | Playwright + local registrar            | Two phones register with digest auth and call each other with real JsSIP and WebRTC: answer, live audio levels, mute, hold/remote hold, DTMF, hangup, rejected passwords, unknown numbers |
 | Live PBX       | Jest (Node WebSocket) / Playwright      | Real REGISTER against your server; with `SIP_TEST_TARGET`, a real call with Chromium's fake microphone      |
 
-Live tests read `native/.env.local` (git-ignored; see `.env.example`) and skip without credentials.
+Live tests read `native/.env.local` (git-ignored; see `.env.example`) and skip without credentials. The live browser call only runs with `SIP_LIVE=1` (`npm run test:live:call`) so routine runs never touch a real account.
 
 ## Native builds
 

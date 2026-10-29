@@ -24,7 +24,8 @@ jobs:
       - run: npm run check
       - run: npm run playground:build
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --project=desktop --project=mobile
+      # Desktop + mobile UI suites and real SIP/WebRTC calls on a local registrar.
+      - run: npx playwright test
       - run: npm run publish:check
       - uses: actions/upload-artifact@v4
         if: failure()

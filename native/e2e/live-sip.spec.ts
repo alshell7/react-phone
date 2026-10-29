@@ -94,5 +94,6 @@ test("registers over WSS from the web build, then places and controls a real cal
   await expect(
     page.getByLabel(new RegExp(`Call to \\${target}`)),
   ).toBeVisible();
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  // Report the text of any error the phone showed, not just a count.
+  expect(await page.getByRole("alert").allTextContents()).toEqual([]);
 });

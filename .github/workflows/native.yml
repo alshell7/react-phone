@@ -69,3 +69,8 @@ jobs:
       - run: npm run playground:build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:live:call
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: live-sip-report
+          path: native/test-results

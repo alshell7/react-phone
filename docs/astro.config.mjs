@@ -9,7 +9,7 @@ export default defineConfig({
     starlight({
       title: "Azeer / Phone",
       description:
-        "An embeddable SIP phone for React. Presets, dynamic islands, live audio visuals, and a headless client.",
+        "An embeddable SIP phone for React and React Native. Presets, dynamic islands, live audio visuals, and a headless client.",
       favicon: "/favicon.svg",
       customCss: ["@fontsource-variable/geist", "./src/styles/custom.css"],
       components: {
@@ -37,6 +37,23 @@ export default defineConfig({
             { label: "Introduction", slug: "index" },
             { label: "Quick start", slug: "quick-start" },
             { label: "Playground", slug: "playground-guide" },
+          ],
+        },
+        {
+          label: "React Native",
+          items: [
+            { label: "Introduction", slug: "native", badge: "New" },
+            { label: "Quick start", slug: "native/quick-start" },
+            { label: "Phone surfaces", slug: "native/surfaces" },
+            { label: "Dynamic island", slug: "native/dynamic-island" },
+            { label: "Calling & lifecycle", slug: "native/calling" },
+            { label: "Audio, tones & haptics", slug: "native/audio" },
+            { label: "Orb, waveforms & bars", slug: "native/visuals" },
+            { label: "Themes, identity & motion", slug: "native/customization" },
+            { label: "Compose your own", slug: "native/components" },
+            { label: "Platforms & recovery", slug: "native/platforms" },
+            { label: "Playground", slug: "native/playground-guide" },
+            { label: "Develop, test & publish", slug: "native/development" },
           ],
         },
         {

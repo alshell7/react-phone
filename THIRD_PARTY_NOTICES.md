@@ -37,6 +37,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## React Native package (`native/`)
+
+`native/src/components/visuals/bar-visualizer.tsx` ports the sequencing logic of the adapted ElevenLabs UI Bar Visualizer above (mirrored connecting pairs, center listening/thinking highlight, volume-to-height mapping) to React Native Views and the native animation driver. It is covered by the ElevenLabs UI MIT license reproduced above.
+
+`orb.tsx`, `live-waveform.tsx`, and `waveform.tsx` in the same folder are new React Native implementations that follow the look and behaviour of ElevenLabs UI's Orb, Live Waveform, and Waveform. They contain no upstream shader, canvas, or texture code: the Orb is built from `react-native-svg` gradients, and the waveforms render levels from WebRTC statistics.
+
+Additional dependencies of the React Native package:
+
+- [react-native-webrtc](https://github.com/react-native-webrtc/react-native-webrtc): MIT, peer dependency installed by the host app.
+- [react-native-svg](https://github.com/software-mansion/react-native-svg): MIT, peer dependency installed by the host app.
+- [lucide-react-native](https://lucide.dev/license): ISC, retained in the dependency distribution.
+- [Expo](https://github.com/expo/expo) and [@config-plugins/react-native-webrtc](https://github.com/expo/config-plugins): MIT, example app only.
+
 ## Other dependencies and references
 
 - [JsSIP](https://github.com/versatica/JsSIP): MIT, retained in the dependency distribution.

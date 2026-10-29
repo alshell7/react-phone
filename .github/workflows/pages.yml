@@ -25,8 +25,10 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             docs/package-lock.json
+            native/package-lock.json
       - run: npm ci
       - run: npm ci --prefix docs
+      - run: npm ci --prefix native
       - run: npm run site:build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

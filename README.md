@@ -6,7 +6,7 @@
 
 A customizable SIP phone for React. Embed a complete widget, dock a **dynamic island**, or compose your own calling controls. Powered by **JsSIP** and source adaptations of **ElevenLabs UI** Orb, Live Waveform, and Bar Visualizer.
 
-**[Documentation](https://alshell7.github.io/react-phone/) · [Playground](https://alshell7.github.io/react-phone/playground/) · [JSR package](https://jsr.io/@azeer-ui-widget/react-phone) · [Releases](https://github.com/alshell7/react-phone/releases)**
+**[Documentation](https://alshell7.github.io/react-phone/) · [Playground](https://alshell7.github.io/react-phone/playground/) · [JSR package](https://jsr.io/@azeer-ui-widget/react-phone) · [React Native](./native/) · [Releases](https://github.com/alshell7/react-phone/releases)**
 
 [![MIT License](https://img.shields.io/badge/license-MIT-63dca8?style=flat-square)](./LICENSE)
 [![React 19](https://img.shields.io/badge/React-19-63dca8?style=flat-square)](https://react.dev/)
@@ -113,6 +113,23 @@ Connection status stays visible. Collapsing never disconnects or ends a call. Us
 ```
 
 Each destination/key gets one attempt per mounted widget and client. Reconnects, rerenders, hangup, and microphone denial do not redial. Busy-line requests are skipped. Unmounting resets this scope. **[Calling contract](https://alshell7.github.io/react-phone/calling/)**
+
+## React Native
+
+**[`@azeer-ui-widget/react-native-phone`](./native/)** brings the same SIP lifecycle to iOS, Android, and react-native-web, with a phone-native interface: a full-screen call screen, an iOS-style keypad, slide-to-answer, a floating dynamic island with heads-up banners and gestures, speaker routing, runtime permissions with Settings recovery, and haptics.
+
+```sh
+npx jsr add @azeer-ui-widget/react-native-phone
+npx expo install react-native-webrtc @config-plugins/react-native-webrtc react-native-svg
+```
+
+```tsx
+import { SipPhoneIsland } from "@azeer-ui-widget/react-native-phone";
+
+<SipPhoneIsland config={config} autoConnect incomingBehavior="notify" insets={useSafeAreaInsets()} />;
+```
+
+**[React Native docs](https://alshell7.github.io/react-phone/native/) · [Playground](https://alshell7.github.io/react-phone/native/playground/) · [Package README](./native/README.md)**
 
 ## Architecture
 

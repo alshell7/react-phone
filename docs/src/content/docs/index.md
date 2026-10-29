@@ -38,6 +38,14 @@ export function SupportPhone({ config }: { config: SipConfig }) {
 
 Supply a stable configuration after sign-in. The phone asks for microphone access when the user dials or answers. No separate stylesheet or ElevenLabs API key is required.
 
+## Building for iOS and Android?
+
+[React Native Phone](/react-phone/native/) brings the same calling engine to mobile with a full-screen call experience, an iOS-style keypad, slide-to-answer, a floating dynamic island, speaker routing, and native permissions. It also runs on the web through react-native-web.
+
+```sh
+npx jsr add @azeer-ui-widget/react-native-phone
+```
+
 ## Choose your integration
 
 | You need                                          | Start with                     | Guide                                                                   |

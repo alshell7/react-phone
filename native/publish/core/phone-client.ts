@@ -72,6 +72,7 @@ export class PhoneClient {
   private previewTimer: ReturnType<typeof setTimeout> | undefined;
   private transferTimer: ReturnType<typeof setTimeout> | undefined;
   private iceTimer: ReturnType<typeof setTimeout> | undefined;
+  private holdTimer: ReturnType<typeof setTimeout> | undefined;
   private cancelConnect: (() => void) | null = null;
   private sessionActive = false;
   private energy: {
@@ -671,6 +672,7 @@ export class PhoneClient {
     clearTimeout(this.previewTimer);
     clearTimeout(this.transferTimer);
     clearTimeout(this.iceTimer);
+    clearTimeout(this.holdTimer);
     this.energy = {};
     const call = this.snapshot.call;
     const completed = call && !call.endedAt ? {
@@ -953,12 +955,33 @@ export class PhoneClient {
       this.emit("held", held);
       return;
     }
+    this.applyHold(held, Date.now() + 6000);
+  }
+
+  /**
+   * JsSIP reports hold as soon as the re-INVITE is sent, so a quick Resume can arrive
+   * while the PBX is still answering it. Retry until negotiation settles instead of
+   * failing the person's tap.
+   */
+  private applyHold(held: boolean, deadline: number): void {
+    clearTimeout(this.holdTimer);
+    const session = this.session;
+    if (!session || !ACTIVE.includes(this.snapshot.status)) return;
+    if (this.snapshot.status === (held ? "held" : "active")) return;
+    let ok = false;
     try {
-      const ok = held ? this.session?.hold() : this.session?.unhold();
-      if (!ok) throw new Error("Not ready");
+      ok = Boolean(held ? session.hold() : session.unhold());
     } catch {
-      throw this.fail("call", "Hold is temporarily unavailable while the call negotiates. Try again shortly.");
+      ok = false;
     }
+    if (ok) return;
+    if (Date.now() < deadline) {
+      this.holdTimer = setTimeout(() => {
+        if (this.session === session) this.applyHold(held, deadline);
+      }, 250);
+      return;
+    }
+    this.fail("call", "Hold is temporarily unavailable while the call negotiates. Try again shortly.");
   }
 
   /** RFC2833 needs an RTP DTMF sender; react-native-webrtc lacks one, so use SIP INFO. */

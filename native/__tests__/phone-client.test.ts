@@ -637,3 +637,49 @@ describe("end reasons", () => {
     if (errors) expect(client.getSnapshot().error?.message).toContain(reason);
   });
 });
+
+describe("hold negotiation", () => {
+  it("retries Resume while the hold re-INVITE is still in flight", async () => {
+    const client = make();
+    const session = await connectedCall(client);
+    jest.useFakeTimers();
+    client.setHeld(true);
+    expect(client.getSnapshot().status).toBe("held");
+    let ready = false;
+    session.unhold.mockImplementation(() => {
+      if (!ready) return false;
+      session.emit("unhold", { originator: "local" });
+      return true;
+    });
+    client.setHeld(false);
+    expect(client.getSnapshot().status).toBe("held");
+    expect(client.getSnapshot().error).toBeNull();
+    ready = true;
+    await jest.advanceTimersByTimeAsync(300);
+    expect(client.getSnapshot().status).toBe("active");
+    expect(client.getSnapshot().error).toBeNull();
+  });
+
+  it("explains when hold cannot be applied after negotiation stalls", async () => {
+    const client = make();
+    const session = await connectedCall(client);
+    jest.useFakeTimers();
+    session.hold.mockImplementation(() => false);
+    client.setHeld(true);
+    await jest.advanceTimersByTimeAsync(6500);
+    expect(client.getSnapshot().status).toBe("active");
+    expect(client.getSnapshot().error?.message).toContain("Hold is temporarily unavailable");
+  });
+
+  it("stops retrying when the call ends", async () => {
+    const client = make();
+    const session = await connectedCall(client);
+    jest.useFakeTimers();
+    session.hold.mockImplementation(() => false);
+    client.setHeld(true);
+    client.hangup();
+    await jest.advanceTimersByTimeAsync(7000);
+    expect(client.getSnapshot().error).toBeNull();
+    expect(session.hold.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+});

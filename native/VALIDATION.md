@@ -17,6 +17,7 @@ Validation performed on 2026-10-29 on macOS (Apple M1) with Node.js 24, Expo SDK
 
 - TLS WebSocket connection to the supplied server succeeded, and the server issued a standard digest challenge (`realm="asterisk"`, MD5, `qop=auth`). JsSIP answered it correctly.
 - The supplied credentials were **rejected with 401** for both supplied accounts, so registration and live calls could not be completed. The phone reported the sanitized "Registration was rejected" error, as designed. Attempts were stopped early to avoid account lockout.
+- Cross-check: the **web package's own playground** (`npm run dev` at the repository root), run on the same machine with the same credentials, was rejected identically (`401`, `401`, "Registration was rejected"), and the React Native web build in Chromium behaved the same. The credentials, not this package, are what the PBX refuses from this machine; a swapped username/password combination was also rejected.
 - The unreachable-server path (timeout and bounded retries) was verified live.
 
 With valid credentials, `npm run test:live` verifies registration, refresh, reconnect, and unregister, and `npx playwright test --project=live-sip` registers from the web build and, with `SIP_TEST_TARGET`, places a real call (Chromium fake microphone), mutes, unmutes, and hangs up.

@@ -1052,7 +1052,11 @@ export class PhoneClient {
       const sender = peer
         ?.getSenders()
         .find((item) => item.track?.kind === "audio");
-      if (!sender?.dtmf) return "INFO" as DTMF_TRANSPORT;
+      const dtmf = sender?.dtmf as
+        { canInsertDTMF?: boolean } | null | undefined;
+      // The RTP sender refuses tones while a re-INVITE (hold/resume) settles.
+      if (!dtmf || dtmf.canInsertDTMF === false)
+        return "INFO" as DTMF_TRANSPORT;
     } catch {
       return "INFO" as DTMF_TRANSPORT;
     }
@@ -1064,8 +1068,17 @@ export class PhoneClient {
       throw this.fail("call", "Use a single keypad digit, *, #, or A–D.");
     if (!ACTIVE.includes(this.snapshot.status)) return;
     try {
-      if (!this.options.preview)
-        this.session?.sendDTMF(tone, { transportType: this.dtmfTransport() });
+      const session = this.session;
+      if (!this.options.preview && session) {
+        const transportType = this.dtmfTransport();
+        try {
+          session.sendDTMF(tone, { transportType });
+        } catch (error) {
+          if (transportType !== ("RFC2833" as DTMF_TRANSPORT)) throw error;
+          // In-band DTMF can still be refused mid-renegotiation; SIP INFO is out of band.
+          session.sendDTMF(tone, { transportType: "INFO" as DTMF_TRANSPORT });
+        }
+      }
       this.emit("dtmf", tone);
       this.playKeypadTone(tone);
     } catch {

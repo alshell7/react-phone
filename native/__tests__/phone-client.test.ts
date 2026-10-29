@@ -535,6 +535,46 @@ describe("native platform behaviour", () => {
     expect(() => client.sendDTMF("55")).toThrow("single keypad digit");
   });
 
+  it("uses SIP INFO while the RTP DTMF sender cannot insert tones", async () => {
+    const client = make();
+    const session = await connectedCall(client);
+    session.connection!.senders[0].dtmf = { canInsertDTMF: false };
+    client.sendDTMF("2");
+    expect(session.sendDTMF).toHaveBeenLastCalledWith("2", {
+      transportType: "INFO",
+    });
+  });
+
+  it("falls back to SIP INFO when in-band DTMF is refused mid-renegotiation", async () => {
+    const onEvent = jest.fn();
+    const client = make({ onEvent });
+    const session = await connectedCall(client);
+    session.connection!.senders[0].dtmf = { canInsertDTMF: true };
+    session.sendDTMF.mockImplementationOnce(() => {
+      throw new Error("InvalidStateError");
+    });
+    client.sendDTMF("3");
+    expect(session.sendDTMF.mock.calls.map((call) => call[1])).toEqual([
+      { transportType: "RFC2833" },
+      { transportType: "INFO" },
+    ]);
+    expect(client.getSnapshot().error).toBeNull();
+    expect(onEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "dtmf", value: "3" }),
+    );
+  });
+
+  it("reports a DTMF failure only when SIP INFO also fails", async () => {
+    const client = make();
+    const session = await connectedCall(client);
+    session.sendDTMF.mockImplementation(() => {
+      throw new Error("no transport");
+    });
+    expect(() => client.sendDTMF("4")).toThrow(
+      "Could not send the keypad tone",
+    );
+  });
+
   it("honours an explicit INFO transport", async () => {
     const client = make();
     const connection = client.connect({ ...config, dtmfTransport: "INFO" });

@@ -9,7 +9,7 @@ First release of `@azeer-ui-widget/react-native-phone`, the React Native compani
 - Incoming/outgoing SIP audio over secure WebSocket with JsSIP and react-native-webrtc on iOS and Android, and browser WebRTC through react-native-web.
 - Manual, prefilled, and once-per-request automatic dialing; answer, decline, cancel, mute, hold, speaker, DTMF, and blind REFER transfer.
 - Runtime microphone permission with `denied` and `blocked` states and an Open Settings recovery action.
-- RFC 2833 DTMF where an RTP DTMF sender exists, with automatic SIP INFO fallback on react-native-webrtc.
+- RFC 2833 DTMF where an RTP DTMF sender can insert tones, with automatic SIP INFO fallback on react-native-webrtc and while a re-INVITE (hold/resume) settles.
 - Foreground re-registration, bounded reconnection, ICE loss handling, and generation-guarded media cleanup.
 - Audio levels from WebRTC statistics, identical on every platform.
 - Readable end reasons ("Call ended", "Missed call", "Number not found", …) instead of raw SIP causes.

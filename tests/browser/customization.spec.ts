@@ -242,14 +242,15 @@ test("panel resizing uses configured motion timing and reduced motion cancels it
     window.phoneHarness.update({ motion: { durationMs: 500 } });
     await paint();
     window.phoneHarness.update({ controls: ["hangup"] });
-    await paint();
-    return document
-      .querySelector(".az-size-frame")!
-      .getAnimations()
-      .map((animation) => ({
-        state: animation.playState,
-        duration: animation.effect?.getTiming().duration,
-      }));
+    // React's commit and the ResizeObserver callback can land a few frames later
+    // on a loaded CI runner; wait for the resize animation instead of two frames.
+    const frame = document.querySelector(".az-size-frame")!;
+    for (let i = 0; i < 60 && frame.getAnimations().length === 0; i++)
+      await paint();
+    return frame.getAnimations().map((animation) => ({
+      state: animation.playState,
+      duration: animation.effect?.getTiming().duration,
+    }));
   });
   expect(animations).toContainEqual({ state: "running", duration: 500 });
   await page.emulateMedia({ reducedMotion: "reduce" });
